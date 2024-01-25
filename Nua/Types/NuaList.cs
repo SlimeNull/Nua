@@ -8,7 +8,7 @@ namespace Nua.Types
 
         public override string ToString()
         {
-            return $"[{string.Join(", ", Storage)}]";
+            return $"[ {string.Join(", ", Storage)} ]";
         }
     }
 

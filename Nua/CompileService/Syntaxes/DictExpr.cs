@@ -61,6 +61,7 @@ namespace Nua.CompileService.Syntaxes
 
             if (tokens[cursor].Kind != TokenKind.BigBracketRight)
                 return false;
+            cursor++;
 
             index = cursor;
             expr = new DictExpr(members);

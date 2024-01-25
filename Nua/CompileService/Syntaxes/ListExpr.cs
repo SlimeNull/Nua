@@ -12,7 +12,14 @@ namespace Nua.CompileService.Syntaxes
 
         public ChainExpr Chain { get; }
 
-        public override NuaValue? Eval(NuaContext context) => Chain.Eval(context);
+        public override NuaValue? Eval(NuaContext context)
+        {
+            NuaList list = new();
+            foreach (var value in Chain.Expressions)
+                list.Storage.Add(value.Eval(context));
+
+            return list;
+        }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ListExpr? expr)
         {
