@@ -49,7 +49,7 @@ namespace Nua.CompileService.Syntaxes
 
             string name = idToken.Value!;
 
-            Match(tokens, ref cursor, out var nextTail);
+            ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
 
             expr = new ValueMemberAccessTailExpr(name, nextTail);
             index = cursor;

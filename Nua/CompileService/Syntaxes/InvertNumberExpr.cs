@@ -29,7 +29,7 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref index, TokenKind.OptMin, out _))
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptMin, out _))
                 return false;
             if (!PrimaryExpr.Match(tokens, ref cursor, out var toInvert))
                 throw new NuaParseException("Expect 'primary-expression' after '-' while parsing 'invert-number-expression'");

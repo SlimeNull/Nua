@@ -60,8 +60,8 @@ namespace Nua.CompileService.Syntaxes
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref index, TokenKind.OptDoubleAdd, out operatorToken) &&
-                !TokenMatch(tokens, ref index, TokenKind.OptDoubleMin, out operatorToken))
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptDoubleAdd, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptDoubleMin, out operatorToken))
                 return false;
 
             bool negative = operatorToken.Kind == TokenKind.OptDoubleMin;

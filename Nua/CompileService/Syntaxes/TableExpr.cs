@@ -16,7 +16,7 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Eval(NuaContext context)
         {
-            var table = new NuaTable();
+            var table = new NuaNativeTable();
 
             foreach (var member in Members)
             {

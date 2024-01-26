@@ -28,10 +28,12 @@ namespace Nua.CompileService.Syntaxes
 
             if (iterableValue is NuaTable table)
             {
-                foreach (var kv in table.Storage)
+                foreach (var kv in table)
                 {
                     forContext.Values.Clear();
-                    forContext.Values[ValueName] = kv.Value;
+
+                    if (kv.Value != null)
+                        forContext.Values[ValueName] = kv.Value;
                     if (KeyName != null)
                         forContext.Values[KeyName] = kv.Key;
 
