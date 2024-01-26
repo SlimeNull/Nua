@@ -8,7 +8,7 @@ namespace Nua.CompileService.Syntaxes
         {
             return
                 FuncExpr.Match(tokens, ref index, out expr) ||
-                DictExpr.Match(tokens, ref index, out expr) ||
+                TableExpr.Match(tokens, ref index, out expr) ||
                 ListExpr.Match(tokens, ref index, out expr) ||
                 QuotedExpr.Match(tokens, ref index, out expr) ||
                 VariableExpr.Match(tokens, ref index, out expr) ||

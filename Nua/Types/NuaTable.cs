@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Nua.Types
 {
-    public class NuaDictionary : NuaValue
+    public class NuaTable : NuaValue
     {
         public Dictionary<NuaValue, NuaValue> Storage { get; } = new();
 

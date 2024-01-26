@@ -24,8 +24,8 @@ namespace Nua.CompileService.Syntaxes
 
         public void SetMemberValue(NuaContext context, NuaValue valueToAccess, NuaValue? newMemberValue)
         {
-            if (valueToAccess is not NuaDictionary dict)
-                throw new NuaEvalException("Unable to access member of non-dictionary value");
+            if (valueToAccess is not NuaTable table)
+                throw new NuaEvalException("Unable to access member of non-table value");
 
             if (NextTail != null)
             {
@@ -47,7 +47,7 @@ namespace Nua.CompileService.Syntaxes
                     throw new NuaEvalException("Only Value member or Variable can be assigned");
 
                 if (key != null)
-                    dict.Set(key, newMemberValue);
+                    table.Set(key, newMemberValue);
             }
         }
 

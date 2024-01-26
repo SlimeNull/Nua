@@ -26,9 +26,9 @@ namespace Nua.CompileService.Syntaxes
             var iterableValue = Iterable.Eval(context);
             NuaValue? result = null;
 
-            if (iterableValue is NuaDictionary dict)
+            if (iterableValue is NuaTable table)
             {
-                foreach (var kv in dict.Storage)
+                foreach (var kv in table.Storage)
                 {
                     forContext.Values.Clear();
                     forContext.Values[ValueName] = kv.Value;

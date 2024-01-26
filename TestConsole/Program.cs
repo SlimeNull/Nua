@@ -38,8 +38,8 @@ namespace TestConsole
                 int len = 0;
                 foreach (var value in parameters)
                 {
-                    if (value is NuaDictionary dict)
-                        len += dict.Storage.Count;
+                    if (value is NuaTable table)
+                        len += table.Storage.Count;
                     else if (value is NuaList list)
                         len += list.Storage.Count;
                     else if (value is NuaString str)
@@ -68,6 +68,9 @@ namespace TestConsole
 
                 if (input == null)
                     break;
+
+                if (string.IsNullOrWhiteSpace(input))
+                    continue;
 
                 var reader = new StringReader(input);
 

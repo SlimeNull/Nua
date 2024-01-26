@@ -7,9 +7,9 @@ namespace Nua.CompileService.Syntaxes
     /// xxx: expr,
     /// "xxx": expr
     /// </summary>
-    public class DictMemberExpr : Expr
+    public class TableMemberExpr : Expr
     {
-        public DictMemberExpr(Expr key, Expr value)
+        public TableMemberExpr(Expr key, Expr value)
         {
             Key = key;
             Value = value;
@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Eval(NuaContext context) => Value.Eval(context);
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out DictMemberExpr? expr)
+        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out TableMemberExpr? expr)
         {
             expr = null;
             int cursor = index;
@@ -34,13 +34,13 @@ namespace Nua.CompileService.Syntaxes
                 return false;
 
             if (!TokenMatch(tokens, ref cursor, TokenKind.OptColon, out _))
-                throw new NuaParseException("Expect ':' after dict member name while parsing 'dict-expression'");
+                throw new NuaParseException("Expect ':' after table member name while parsing 'table-expression'");
 
             if (!Expr.MatchAny(tokens, ref cursor, out var value))
-                throw new NuaParseException("Expect expression after ':' while parsing 'dict-expression'");
+                throw new NuaParseException("Expect expression after ':' while parsing 'table-expression'");
 
             index = cursor;
-            expr = new DictMemberExpr(key, value);
+            expr = new TableMemberExpr(key, value);
             return true;
         }
     }

@@ -19,14 +19,14 @@ namespace Nua.CompileService.Syntaxes
             if (valueToIndex == null)
                 throw new NuaEvalException("Unable to index a null value");
 
-            if (valueToIndex is NuaDictionary dict)
+            if (valueToIndex is NuaTable table)
             {
                 NuaValue? index = Index.Eval(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
 
-                return dict.Get(index);
+                return table.Get(index);
             }
             else if (valueToIndex is NuaList list)
             {

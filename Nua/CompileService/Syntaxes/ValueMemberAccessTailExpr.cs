@@ -17,11 +17,11 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Eval(NuaContext context, NuaValue valueToAccess)
         {
-            if (valueToAccess is not NuaDictionary dict)
-                throw new NuaEvalException("Unable to access member of non-dictionary value");
+            if (valueToAccess is not NuaTable table)
+                throw new NuaEvalException("Unable to access member of non-table value");
 
             var key = new NuaString(Name);
-            var value = dict.Get(key); 
+            var value = table.Get(key); 
 
             if (NextTail != null)
             {
