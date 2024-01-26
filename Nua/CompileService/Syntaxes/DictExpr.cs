@@ -31,37 +31,22 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.BigBracketLeft)
-                return false;
-            cursor++;
 
             List<DictMemberExpr> members = new();
-
             while (DictMemberExpr.Match(tokens, ref cursor, out var member))
             {
                 members.Add(member);
 
-                if (cursor < 0 || cursor >= tokens.Count)
+                if (!TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _))
                     break;
-                if (tokens[cursor].Kind != TokenKind.OptComma)
-                    break;
-                cursor++;
             }
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind == TokenKind.OptComma)
-            {
-                cursor++;
-                if (cursor < 0 || cursor >= tokens.Count)
-                    return false;
-            }
+            TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _);
 
-            if (tokens[cursor].Kind != TokenKind.BigBracketRight)
-                return false;
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
+                throw new NuaParseException("Expect '}' after '{' while parsing 'dict-expression'");
 
             index = cursor;
             expr = new DictExpr(members);

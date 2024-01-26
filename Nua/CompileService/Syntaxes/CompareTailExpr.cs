@@ -47,15 +47,14 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.OptLss &&
-                tokens[cursor].Kind != TokenKind.OptGtr &&
-                tokens[cursor].Kind != TokenKind.OptLeq &&
-                tokens[cursor].Kind != TokenKind.OptLeq)
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptLss, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptGtr, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptLeq, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptGeq, out operatorToken))
                 return false;
 
-            CompareOperation operation = tokens[cursor].Kind switch
+            CompareOperation operation = operatorToken.Kind switch
             {
                 TokenKind.OptLss => CompareOperation.LessThan,
                 TokenKind.OptGtr => CompareOperation.GreaterThan,
@@ -64,9 +63,7 @@ namespace Nua.CompileService.Syntaxes
                 _ => CompareOperation.LessThan,
             };
 
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.Add, tokens, ref cursor, out var right))
+            if (!AddExpr.Match(tokens, ref cursor, out var right))
                 return false;
 
             Match(tokens, ref cursor, out var nextTail);

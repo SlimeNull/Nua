@@ -93,8 +93,8 @@ namespace Nua.CompileService.Syntaxes
                 _ => AddOperation.Add
             };
 
-            if (!Expr.Match(ExprLevel.Mul, tokens, ref cursor, out var right))
-                return false;
+            if (!MulExpr.Match(tokens, ref cursor, out var right))
+                throw new NuaParseException("Expect 'mul-expression' after 'add' or 'min' token");
 
             Match(tokens, ref cursor, out var nextTail);
 

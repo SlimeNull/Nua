@@ -9,16 +9,15 @@ namespace Nua.CompileService
 {
     public static class Parser
     {
-        public static Expr? Parse(IList<Token> tokens)
+        public static Expr Parse(IList<Token> tokens)
         {
             int cursor = 0;
-            if (Expr.Match(ExprLevel.All, tokens, ref cursor, out var expr))
-                return expr;
-
+            if (!Expr.MatchAny(tokens, ref cursor, out var expr))
+                throw new ArgumentException("Invalid expression");
             if (cursor < tokens.Count)
                 throw new ArgumentException($"Unexpected token '{tokens[cursor]}'");
 
-            return null;
+            return expr;
         }
     }
 }

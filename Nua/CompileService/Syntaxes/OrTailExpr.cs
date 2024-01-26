@@ -46,14 +46,10 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdOr, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.KwdOr)
-                return false;
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.And, tokens, ref cursor, out var right))
-                return false;
+            if (!AndExpr.Match(tokens, ref cursor, out var right))
+                throw new NuaParseException("Expect 'and-expression' after 'or' keyword");
 
             Match(tokens, ref cursor, out var nextTail);
 

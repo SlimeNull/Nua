@@ -44,13 +44,9 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAssign, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.OptAssign)
-                return false;
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.Or, tokens, ref cursor, out var right))
+            if (!OrExpr.Match(tokens, ref cursor, out var right))
                 return false;
 
             Match(tokens, ref cursor, out var nextTail);

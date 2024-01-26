@@ -39,22 +39,19 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.OptEql &&
-                tokens[cursor].Kind != TokenKind.OptNeq)
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptEql, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptNeq, out operatorToken))
                 return false;
 
-            EqualOperation operation = tokens[cursor].Kind switch
+            EqualOperation operation = operatorToken.Kind switch
             {
                 TokenKind.OptEql => EqualOperation.Equal,
                 TokenKind.OptNeq => EqualOperation.NotEqual,
                 _ => EqualOperation.Equal,
             };
 
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.Compare, tokens, ref cursor, out var right))
+            if (!CompareExpr.Match(tokens, ref cursor, out var right))
                 return false;
 
             Match(tokens, ref cursor, out var nextTail);

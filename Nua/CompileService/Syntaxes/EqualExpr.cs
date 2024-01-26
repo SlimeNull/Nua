@@ -24,7 +24,7 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!Expr.Match(ExprLevel.Compare, tokens, ref cursor, out var left))
+            if (!CompareExpr.Match(tokens, ref cursor, out var left))
                 return false;
             EqualTailExpr.Match(tokens, ref cursor, out var tail);
 

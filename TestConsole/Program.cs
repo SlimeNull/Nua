@@ -69,14 +69,11 @@ namespace TestConsole
                     break;
 
                 var reader = new StringReader(input);
-                var tokens = Lexer.Lex(reader).ToArray();
 
                 try
                 {
-                    sw.Restart();
+                    var tokens = Lexer.Lex(reader).ToArray();
                     var expr = Parser.Parse(tokens);
-                    sw.Stop();
-                    Console.WriteLine($"解析耗时: {sw.ElapsedMilliseconds}ms");
 
                     var result = expr?.Eval(context);
 

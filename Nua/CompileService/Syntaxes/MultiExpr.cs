@@ -50,7 +50,7 @@ namespace Nua.CompileService.Syntaxes
             List<Expr> expressions = new();
 
             int cursor = index;
-            while (Expr.Match(ExprLevel.All, tokens, ref cursor, out var oneExpr))
+            while (Expr.MatchAny(tokens, ref cursor, out var oneExpr))
                 expressions.Add(oneExpr);
 
             if (expressions.Count == 0)

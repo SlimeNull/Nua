@@ -41,9 +41,10 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!Expr.Match(ExprLevel.Primary, tokens, ref cursor, out var left))
+            if (!PrimaryExpr.Match(tokens, ref cursor, out var left))
                 return false;
-            AssignTailExpr.Match(tokens, ref cursor, out var tail);
+            if (!AssignTailExpr.Match(tokens, ref cursor, out var tail))
+                return false;
 
             index = cursor;
             expr = tail != null ? new AssignExpr(left, tail) : left;

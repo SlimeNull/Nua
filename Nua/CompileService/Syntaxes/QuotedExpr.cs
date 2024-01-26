@@ -17,23 +17,16 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.ParenthesesLeft)
-                return false;
-
             int cursor = index;
-            cursor++;
 
-            if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var content))
+            if (!TokenMatch(tokens, ref cursor, TokenKind.ParenthesesLeft, out _))
                 return false;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.ParenthesesRight)
-                return false;
+            if (!Expr.MatchAny(tokens, ref cursor, out var content))
+                throw new NuaParseException("Expect expression after '(' token while parsing 'quote-expressoin'");
 
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.ParenthesesRight, out _))
+                throw new NuaParseException("Expect ')' after expression while parsing 'quote-expressoin'");
 
             expr = new QuotedExpr(content);
             return true;

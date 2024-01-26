@@ -73,20 +73,14 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.SquareBracketLeft)
-                return false;
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var indexExpr))
+            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketLeft, out _))
                 return false;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.SquareBracketRight)
-                return false;
-            cursor++;
+            if (!Expr.MatchAny(tokens, ref cursor, out var indexExpr))
+                throw new NuaParseException("Require index after '[' while parsing 'value-access-expression'");
+
+            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketRight, out _))
+                throw new NuaParseException("Require ']' after index while parsing 'value-access-expression'");
 
             ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
 

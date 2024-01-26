@@ -67,13 +67,16 @@ namespace Nua.CompileService.Syntaxes
             else
                 return false;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.OptDoubleAdd &&
-                tokens[cursor].Kind != TokenKind.OptDoubleMin)
-                return false;
-            bool negative = tokens[cursor].Kind == TokenKind.OptDoubleMin;
-            cursor++;
+
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptDoubleAdd, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptDoubleMin, out operatorToken))
+            {
+                expr = self;
+                return true;
+            }
+
+            bool negative = operatorToken.Kind == TokenKind.OptDoubleMin;
 
             index = cursor;
             expr = new SuffixSelfAddExpr(self, negative);

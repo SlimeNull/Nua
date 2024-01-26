@@ -5,17 +5,17 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ListExpr : ValueExpr
     {
-        public ListExpr(ChainExpr chain)
-        {
-            Chain = chain;
-        }
+        public IEnumerable<Expr> Values { get; }
 
-        public ChainExpr Chain { get; }
+        public ListExpr(IEnumerable<Expr> values)
+        {
+            Values = values;
+        }
 
         public override NuaValue? Eval(NuaContext context)
         {
             NuaList list = new();
-            foreach (var value in Chain.Expressions)
+            foreach (var value in Values)
                 list.Storage.Add(value.Eval(context));
 
             return list;
@@ -24,25 +24,23 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.SquareBracketLeft)
-                return false;
-
             int cursor = index;
-            cursor++;
 
-            if (!ChainExpr.Match(tokens, ref cursor, out var chain))
+            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketLeft, out _))
                 return false;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.SquareBracketRight)
-                return false;
-            cursor++;
+            ChainExpr.Match(tokens, ref cursor, out var chain);
+
+            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketRight, out _))
+            {
+                if (chain != null)
+                    throw new NuaParseException("Expect ']' after '[' while parsing 'list-expression'");
+                else
+                    throw new NuaParseException("Expect expression after '[' while parsing 'list-expression'");
+            }
 
             index = cursor;
-            expr = new ListExpr(chain);
+            expr = new ListExpr(chain?.Expressions ?? []);
             return true;
         }
 

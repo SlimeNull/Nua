@@ -29,19 +29,20 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count ||
-                tokens[index].Kind != TokenKind.ParenthesesLeft)
-                return false;
-
             int cursor = index;
-            cursor++;
+
+            if (!TokenMatch(tokens, ref cursor, TokenKind.ParenthesesLeft, out _))
+                return false;
 
             ChainExpr.Match(tokens, ref cursor, out var chain);
 
-            if (cursor >= tokens.Count ||
-                tokens[cursor].Kind != TokenKind.ParenthesesRight)
-                return false;
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.ParenthesesRight, out _))
+            {
+                if (chain != null)
+                    throw new NuaParseException("Require ')' after '(' while parsing 'value-access-expression'");
+                else
+                    throw new NuaParseException("Require parameters after '(' while parsing 'value-access-expression'");
+            }
 
             ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
 

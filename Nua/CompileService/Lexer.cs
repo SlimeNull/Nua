@@ -160,7 +160,7 @@ namespace Nua.CompileService
                         var nextCh = reader.Read();
 
                         if (nextCh == -1)
-                            throw new LexException("String not closed");
+                            throw new NuaLexException("String not closed");
 
                         var nextCch = (char)nextCh;
                         if (nextCch == '\\')
@@ -168,7 +168,7 @@ namespace Nua.CompileService
                             var escapeSeq = reader.Read();
 
                             if (escapeSeq == -1)
-                                throw new LexException("String not closed");
+                                throw new NuaLexException("String not closed");
 
                             sb.Append(escapeSeq switch
                             {
@@ -176,7 +176,7 @@ namespace Nua.CompileService
                                 'r' => '\r',
                                 'n' => '\n',
                                 'b' => '\b',
-                                _ => throw new LexException("Invalid escape sequence")
+                                _ => throw new NuaLexException("Invalid escape sequence")
                             });
                         }
                         else if (nextCch == '"')
@@ -315,7 +315,7 @@ namespace Nua.CompileService
                             break;
 
                         default:
-                            throw new LexException($"Invalid character '{ch}'");
+                            throw new NuaLexException($"Invalid character '{ch}'");
                     }
                 }
             }

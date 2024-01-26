@@ -58,16 +58,17 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out MulTailExpr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.OptMul &&
-                tokens[index].Kind != TokenKind.OptDiv &&
-                tokens[index].Kind != TokenKind.OptPow &&
-                tokens[index].Kind != TokenKind.OptMod &&
-                tokens[index].Kind != TokenKind.OptDivInt)
+            int cursor = index;
+
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptMul, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptDiv, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptPow, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptMod, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptDivInt, out operatorToken))
                 return false;
 
-            var operation = tokens[index].Kind switch
+            var operation = operatorToken.Kind switch
             {
                 TokenKind.OptMul => MulOperation.Mul,
                 TokenKind.OptDiv => MulOperation.Div,
@@ -77,11 +78,8 @@ namespace Nua.CompileService.Syntaxes
                 _ => MulOperation.Mul
             };
 
-            int cursor = index;
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.Process, tokens, ref cursor, out var right))
-                return false;
+            if (!ProcessExpr.Match(tokens, ref cursor, out var right))
+                throw new NuaParseException("Expect expression after '*','/','**','//','%' while parsing 'mul-expression'");
 
             Match(tokens, ref cursor, out var nextTail);
 

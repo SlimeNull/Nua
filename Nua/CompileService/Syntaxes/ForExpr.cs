@@ -9,10 +9,8 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (index < 0 || index >= tokens.Count ||
-                tokens[index].Kind != TokenKind.KwdFor)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdFor, out _))
                 return false;
-            cursor++;
 
             VariableExpr valueNameExpr;
             if (!VariableExpr.Match(tokens, ref cursor, out var _valueNameExpr))
@@ -23,42 +21,43 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression");
 
             VariableExpr? keyNameExpr = null;
-            if (tokens[cursor].Kind == TokenKind.OptComma)
+            if (TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _))
             {
-                cursor++;
                 if (!VariableExpr.Match(tokens, ref cursor, out var _keyNameExpr))
                     throw new NuaParseException("Require variable after comma in 'for' expression");
                 keyNameExpr = (VariableExpr)_keyNameExpr;
+
+                (keyNameExpr, valueNameExpr) = (valueNameExpr, keyNameExpr);
 
                 if (cursor >= tokens.Count)
                     throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression");
             }
 
-            ForOperation operation = tokens[cursor].Kind switch
+            Token forKindToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdIn, out forKindToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.KwdOf, out forKindToken))
+                throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression");
+
+            ForOperation operation = forKindToken.Kind switch
             {
                 TokenKind.KwdIn => ForOperation.In,
                 TokenKind.KwdOf => ForOperation.Of,
-                _ => throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression")
+                _ => default
             };
-            cursor++;
 
             if (operation == ForOperation.In)
             {
-                if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var iterable))
+                if (!Expr.MatchAny(tokens, ref cursor, out var iterable))
                     throw new NuaParseException("Require iterable expression after 'in' keyword of 'for' expression");
 
-                if (cursor < 0 || cursor >= tokens.Count ||
-                    tokens[cursor].Kind != TokenKind.BigBracketLeft)
+                if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
                     throw new NuaParseException("Require big left bracket after 'for' iterable expression");
-                cursor++;
 
                 if (!MultiExpr.Match(tokens, ref cursor, out var body))
                     throw new NuaParseException("Require body expressions after 'for' iterable expression");
 
-                if (cursor < 0 || cursor >= tokens.Count ||
-                    tokens[cursor].Kind != TokenKind.BigBracketRight)
+                if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
                     throw new NuaParseException("Require bit right bracket after 'for body' expressions");
-                cursor++;
 
                 index = cursor;
                 expr = new ForInExpr(valueNameExpr.Name, keyNameExpr?.Name, iterable, body);
@@ -82,18 +81,14 @@ namespace Nua.CompileService.Syntaxes
                 if (chain.Expressions.Count == 3)
                     stepExpr = chain.Expressions[2];
 
-                if (cursor < 0 || cursor >= tokens.Count ||
-                    tokens[cursor].Kind != TokenKind.BigBracketLeft)
+                if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
                     throw new NuaParseException("Require big left bracket after 'for' iterable values");
-                cursor++;
 
                 if (!MultiExpr.Match(tokens, ref cursor, out var body))
                     throw new NuaParseException("Require body expressions after 'for' iterable values");
 
-                if (cursor < 0 || cursor >= tokens.Count ||
-                    tokens[cursor].Kind != TokenKind.BigBracketRight)
+                if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
                     throw new NuaParseException("Require bit right bracket after 'for body' expressions");
-                cursor++;
 
                 index = cursor;
                 expr = new ForOfExpr(valueNameExpr.Name, startExpr, endExpr, stepExpr, body);

@@ -34,14 +34,10 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdAnd, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.KwdAnd)
-                return false;
-            cursor++;
-
-            if (!Expr.Match(ExprLevel.Equal, tokens, ref cursor, out var right))
-                return false;
+            if (!EqualExpr.Match(tokens, ref cursor, out var right))
+                throw new NuaParseException("Require 'equal-expression' after 'and' keyword");
 
             Match(tokens, ref cursor, out var nextTail);
 

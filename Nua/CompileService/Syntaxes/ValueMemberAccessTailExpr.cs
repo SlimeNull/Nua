@@ -39,21 +39,15 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.OptDot)
-                return false;
-
             int cursor = index;
-            cursor++;
 
-            if (tokens[cursor].Kind != TokenKind.Identifier ||
-                tokens[cursor].Value == null)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptDot, out _))
                 return false;
 
-            string name = tokens[cursor].Value!;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.Identifier, out var idToken))
+                throw new NuaParseException("Require identifier after '.' while parsing 'value-access-expression'");
 
-            cursor++;
+            string name = idToken.Value!;
 
             Match(tokens, ref cursor, out var nextTail);
 

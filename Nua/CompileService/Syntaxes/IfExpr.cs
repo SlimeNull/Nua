@@ -85,28 +85,19 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdIf, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.KwdIf)
-                return false;
-            cursor++;
 
-            if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var condition))
+            if (!Expr.MatchAny(tokens, ref cursor, out var condition))
                 throw new NuaParseException("Require 'if' condition");
 
-            if (cursor < 0 || cursor >= tokens.Count ||
-                tokens[cursor].Kind != TokenKind.BigBracketLeft)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
                 throw new NuaParseException("Require big left bracket after 'if' condition");
-            cursor++;
-
 
             MultiExpr.Match(tokens, ref cursor, out var body);
 
-
-            if (cursor < 0 || cursor >= tokens.Count ||
-                tokens[cursor].Kind != TokenKind.BigBracketRight)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
                 throw new NuaParseException("Require bit right bracket after 'if body' expressions");
-            cursor++;
 
             List<ElseIfExpr>? elseifs = null;
 

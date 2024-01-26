@@ -54,19 +54,17 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out PrefixSelfAddExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.OptDoubleAdd &&
-                tokens[index].Kind != TokenKind.OptDoubleMin)
-                return false;
-
-            bool negative = tokens[index].Kind == TokenKind.OptDoubleMin;
-
             int cursor = index;
-            cursor++;
+
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref index, TokenKind.OptDoubleAdd, out operatorToken) &&
+                !TokenMatch(tokens, ref index, TokenKind.OptDoubleMin, out operatorToken))
+                return false;
+
+            bool negative = operatorToken.Kind == TokenKind.OptDoubleMin;
 
 
             Expr? self;
@@ -75,7 +73,7 @@ namespace Nua.CompileService.Syntaxes
             else if (VariableExpr.Match(tokens, ref cursor, out var self1))
                 self = self1;
             else
-                return false;
+                throw new NuaParseException("Expect 'value-access-expressoin' or 'variable-expression' after '++' or '--' while parsing 'prefix-self-add-expression'");
 
             index = cursor;
             expr = new PrefixSelfAddExpr(self, negative);

@@ -30,20 +30,15 @@ namespace Nua.CompileService.Syntaxes
 
             List<Expr> expressions = new();
 
-            if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var firstExpr))
+            if (!Expr.MatchAny(tokens, ref cursor, out var firstExpr))
                 return false;
 
             expressions.Add(firstExpr);
 
-            while (cursor >= 0 && cursor < tokens.Count)
+            while (TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _))
             {
-                if (tokens[cursor].Kind != TokenKind.OptComma)
-                    break;
-
-                cursor++;
-
-                if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var nextExpr))
-                    throw new NuaParseException("Expression is required");
+                if (!Expr.MatchAny(tokens, ref cursor, out var nextExpr))
+                    throw new NuaParseException("Expect expression after ',' while parsing 'chain-expression'");
 
                 expressions.Add(nextExpr);
             }

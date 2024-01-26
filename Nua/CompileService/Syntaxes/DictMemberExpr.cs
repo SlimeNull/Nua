@@ -23,35 +23,21 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out DictMemberExpr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
+            int cursor = index;
 
             Expr key;
-
-            int cursor = index;
-            if (tokens[index].Kind == TokenKind.Identifier)
-            {
+            if (TokenMatch(tokens, ref cursor, TokenKind.Identifier, out var idToken))
                 key = new ConstExpr(new NuaString(tokens[cursor].Value!));
-                cursor++;
-            }
             else if (ConstExpr.Match(tokens, ref cursor, out var constKey))
-            {
                 key = constKey;
-                // dont neet to change cursor
-            }
             else
-            {
                 return false;
-            }
 
-            if (cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.OptColon)
-                return false;
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptColon, out _))
+                throw new NuaParseException("Expect ':' after dict member name while parsing 'dict-expression'");
 
-            if (!Expr.Match(ExprLevel.All, tokens, ref cursor, out var value))
-                return false;
+            if (!Expr.MatchAny(tokens, ref cursor, out var value))
+                throw new NuaParseException("Expect expression after ':' while parsing 'dict-expression'");
 
             index = cursor;
             expr = new DictMemberExpr(key, value);

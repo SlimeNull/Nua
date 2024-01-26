@@ -6,16 +6,10 @@ namespace Nua.CompileService.Syntaxes
     {
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
-
-            if (PrefixSelfAddExpr.Match(tokens, ref index, out var expr2))
-                expr = expr2;
-            else if (InvertNumberExpr.Match(tokens, ref index, out var expr1))
-                expr = expr1;
-            else
-                return false;
-
-            return true;
+            return
+                PrefixSelfAddExpr.Match(tokens, ref index, out expr) ||
+                InvertNumberExpr.Match(tokens, ref index, out expr) ||
+                PrimaryExpr.Match(tokens, ref index, out expr);
         }
     }
 }

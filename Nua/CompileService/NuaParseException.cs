@@ -1,4 +1,4 @@
-﻿namespace Nua
+﻿namespace Nua.CompileService
 {
     public class NuaParseException : NuaException
     {

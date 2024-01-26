@@ -9,7 +9,8 @@ namespace Nua.CompileService.Syntaxes
         {
             return
                 ValueAccessExpr.Match(tokens, ref index, out expr) ||
-                SuffixSelfAddExpr.Match(tokens, ref index, out expr);
+                SuffixSelfAddExpr.Match(tokens, ref index, out expr) ||
+                ValueExpr.Match(tokens, ref index, out expr);
         }
     }
 }

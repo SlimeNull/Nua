@@ -28,25 +28,21 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (cursor < 0 || cursor >= tokens.Count)
+            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdElse, out _))
                 return false;
-            if (tokens[cursor].Kind != TokenKind.KwdElse)
-                return false;
-            cursor++;
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.BigBracketLeft)
-                return false;
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
+                throw new NuaParseException("Require '{' after 'else' keyword while parsing 'else-expression'");
 
             MultiExpr.Match(tokens, ref cursor, out var body);
 
-            if (cursor < 0 || cursor >= tokens.Count)
-                return false;
-            if (tokens[cursor].Kind != TokenKind.BigBracketRight)
-                return false;
-            cursor++;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
+            {
+                if (body != null)
+                    throw new NuaParseException("Require '}' after '{' while parsing 'else-expression'");
+                else
+                    throw new NuaParseException("Require body expressions after '{' while parsing 'else-expression'");
+            }
 
             index = cursor;
             expr = new ElseExpr(body);

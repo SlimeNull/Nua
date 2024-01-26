@@ -25,7 +25,7 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!Expr.Match(ExprLevel.Mul, tokens, ref cursor, out var left))
+            if (!MulExpr.Match(tokens, ref cursor, out var left))
                 return false;
             AddTailExpr.Match(tokens, ref cursor, out var tail);
 
