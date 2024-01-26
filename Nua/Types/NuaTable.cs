@@ -28,7 +28,7 @@ namespace Nua.Types
 
         public override string ToString()
         {
-            return $"{{ {string.Join(", ", Storage.Select(kv => $"{kv.Key}: {kv.Value}"))} }}";
+            return $"{{{string.Join(",", Storage.Select(kv => $" {kv.Key}: {kv.Value}"))} }}";
         }
     }
 
