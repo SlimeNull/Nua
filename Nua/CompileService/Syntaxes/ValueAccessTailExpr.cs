@@ -69,7 +69,7 @@ namespace Nua.CompileService.Syntaxes
             SetMemberValue(context, expr, newMemberValue);
         }
 
-        public abstract NuaValue? Eval(NuaContext context, NuaValue valueToAccess);
+        public abstract NuaValue? Eval(NuaContext context, NuaValue? valueToAccess);
         public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueAccessTailExpr? expr)

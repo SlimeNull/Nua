@@ -28,6 +28,7 @@ namespace Nua.CompileService.Syntaxes
             if (!TokenMatch(tokens, ref cursor, TokenKind.ParenthesesRight, out _))
                 throw new NuaParseException("Expect ')' after expression while parsing 'quote-expressoin'");
 
+            index = cursor;
             expr = new QuotedExpr(content);
             return true;
         }
