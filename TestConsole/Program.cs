@@ -58,7 +58,8 @@ namespace TestConsole
             context.Set("len", new NuaLenFunction());
             context.Set("print", new NuaPrintFunction());
 
-            Stopwatch sw = new();
+            Console.WriteLine("Nua TestConsole");
+            Console.WriteLine();
 
             while (true)
             {
@@ -77,23 +78,8 @@ namespace TestConsole
 
                     var result = expr?.Eval(context);
 
-                    Console.WriteLine(expr);
-
                     if (result != null)
-                    {
-                        if (result is NuaString str)
-                            Console.WriteLine(str.Value);
-                        else if (result is NuaNumber number)
-                            Console.WriteLine(number.Value);
-                        else if (result is NuaBoolean boolean)
-                            Console.WriteLine(boolean.Value);
-                        else
-                            Console.WriteLine(result);
-                    }
-                    else
-                    {
-                        Console.WriteLine("null");
-                    }
+                        Console.WriteLine(result);
                 }
                 catch (Exception ex)
                 {

@@ -27,7 +27,7 @@ namespace Nua.CompileService.Syntaxes
 
             Expr key;
             if (TokenMatch(tokens, ref cursor, TokenKind.Identifier, out var idToken))
-                key = new ConstExpr(new NuaString(tokens[cursor].Value!));
+                key = new ConstExpr(new NuaString(idToken.Value!));
             else if (ConstExpr.Match(tokens, ref cursor, out var constKey))
                 key = constKey;
             else
