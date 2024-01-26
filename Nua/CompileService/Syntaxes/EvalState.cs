@@ -2,6 +2,6 @@
 {
     public enum EvalState
     {
-        None, Continue, Break
+        None, Continue, Break, Return
     }
 }

@@ -22,7 +22,7 @@ namespace Nua.CompileService
 
                 if (char.IsWhiteSpace(cch))
                     continue;
-                else if (char.IsLetter(cch))
+                else if (char.IsLetter(cch) || cch == '_')
                 {
                     StringBuilder sb = new StringBuilder();
                     sb.Append(cch);
@@ -32,7 +32,7 @@ namespace Nua.CompileService
                         ch = reader.Peek();
                         cch = (char)ch;
 
-                        if (char.IsLetterOrDigit(cch))
+                        if (char.IsLetterOrDigit(cch) || cch == '_')
                         {
                             reader.Read();
                             sb.Append(cch);
@@ -67,7 +67,7 @@ namespace Nua.CompileService
                         "and" => TokenKind.KwdAnd,
                         "or" => TokenKind.KwdOr,
 
-                        "function" => TokenKind.KwdFunction,
+                        "func" => TokenKind.KwdFunction,
                         "return" => TokenKind.KwdReturn,
 
                         _ => null
