@@ -201,6 +201,11 @@ namespace Nua.CompileService
                                 reader.Read();
                                 yield return new Token(TokenKind.OptDoubleAdd, null);
                             }
+                            else if (reader.Peek() == '=')
+                            {
+                                reader.Read();
+                                yield return new Token(TokenKind.OptAddWith, null);
+                            }
                             else
                             {
                                 yield return new Token(TokenKind.OptAdd, null);
@@ -211,6 +216,11 @@ namespace Nua.CompileService
                             {
                                 reader.Read();
                                 yield return new Token(TokenKind.OptDoubleMin, null);
+                            }
+                            else if (reader.Peek() == '=')
+                            {
+                                reader.Read();
+                                yield return new Token(TokenKind.OptMinWith, null);
                             }
                             else
                             {

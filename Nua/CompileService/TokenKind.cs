@@ -2,6 +2,8 @@
 {
     public enum TokenKind
     {
+        None,
+
         KwdRequire,
 
         KwdIf,
@@ -60,6 +62,6 @@
 
         Identifier,
         String,
-        Number
+        Number,
     }
 }

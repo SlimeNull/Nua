@@ -38,11 +38,11 @@ namespace Nua.CompileService.Syntaxes
 
             int cursor = index;
 
-            if (!VariableExpr.Match(tokens, ref cursor, out var variable))
+            if (!ValueExpr.Match(tokens, ref cursor, out var variable))
                 return false;
             ValueAccessTailExpr.Match(tokens, ref cursor, out var tail);
 
-            expr = tail != null ? new ValueAccessExpr((VariableExpr)variable, tail) : (VariableExpr)variable;
+            expr = tail != null ? new ValueAccessExpr((ValueExpr)variable, tail) : (ValueExpr)variable;
             index = cursor;
             return true;
         }

@@ -5,13 +5,15 @@ namespace Nua.CompileService.Syntaxes
 {
     public class AssignTailExpr : Expr
     {
-        public AssignTailExpr(Expr right, AssignTailExpr? nextTail)
+        public AssignTailExpr(Expr right, AssignOperation operation, AssignTailExpr? nextTail)
         {
             Right = right;
+            Operation = operation;
             NextTail = nextTail;
         }
 
         public Expr Right { get; }
+        public AssignOperation Operation { get; }
         public AssignTailExpr? NextTail { get; }
 
         public override NuaValue? Eval(NuaContext context)
@@ -44,15 +46,27 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAssign, out _))
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAssign, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptAddWith, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptMinWith, out operatorToken))
                 return false;
+
+            AssignOperation operation = operatorToken.Kind switch
+            {
+                TokenKind.OptAssign => AssignOperation.Assign,
+                TokenKind.OptAddWith => AssignOperation.AddWith,
+                TokenKind.OptMinWith => AssignOperation.MinWith,
+                _ => default
+            };
+
             if (!OrExpr.Match(tokens, ref cursor, out var right))
                 return false;
 
             Match(tokens, ref cursor, out var nextTail);
 
             index = cursor;
-            expr = new AssignTailExpr(right, nextTail);
+            expr = new AssignTailExpr(right, operation, nextTail);
             return true;
         }
     }
