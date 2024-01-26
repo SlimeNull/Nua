@@ -2,12 +2,14 @@
 {
     public class NuaBoolean : NuaValue, IEquatable<NuaBoolean?>
     {
+        public override string TypeName => BooleanTypeName;
+        public bool Value { get; set; }
+
         public NuaBoolean(bool value)
         {
             Value = value;
         }
 
-        public bool Value { get; set; }
 
         public override bool Equals(object? obj) => Equals(obj as NuaBoolean);
         public bool Equals(NuaBoolean? other) => other is not null && Value == other.Value;

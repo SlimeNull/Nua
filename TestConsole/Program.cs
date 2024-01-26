@@ -2,6 +2,7 @@
 using Nua;
 using Nua.CompileService;
 using Nua.CompileService.Syntaxes;
+using Nua.Stdlib;
 using Nua.Types;
 
 namespace TestConsole
@@ -38,7 +39,7 @@ namespace TestConsole
                 int len = 0;
                 foreach (var value in parameters)
                 {
-                    if (value is NuaTable table)
+                    if (value is NuaNativeTable table)
                         len += table.Storage.Count;
                     else if (value is NuaList list)
                         len += list.Storage.Count;
@@ -54,9 +55,11 @@ namespace TestConsole
         {
             NuaContext context = new NuaContext();
 
-            context.Set("sin", new NuaSinFunction());
             context.Set("len", new NuaLenFunction());
             context.Set("print", new NuaPrintFunction());
+
+            context.Set("math", MathOperations.Create());
+            context.Set("list", ListOperations.Create());
 
             Console.WriteLine("Nua TestConsole");
             Console.WriteLine();

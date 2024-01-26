@@ -3,6 +3,8 @@ namespace Nua.Types
 {
     public class NuaNumber : NuaValue, IEquatable<NuaNumber?>
     {
+        public override string TypeName => NumberTypeName;
+
         public NuaNumber(double value)
         {
             Value = value;

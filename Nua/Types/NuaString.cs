@@ -3,12 +3,14 @@ namespace Nua.Types
 {
     public class NuaString : NuaValue, IEquatable<NuaString?>
     {
+        public override string TypeName => StringTypeName;
+        public string Value { get; set; }
+
         public NuaString(string value)
         {
             Value = value;
         }
 
-        public string Value { get; set; }
 
         public override bool Equals(object? obj) => Equals(obj as NuaString);
         public bool Equals(NuaString? other) => other is not null && Value == other.Value;
