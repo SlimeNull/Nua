@@ -4,7 +4,7 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class ForExpr : ProcessExpr
     {
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ForExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
@@ -14,8 +14,10 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             cursor++;
 
-            if (!VariableExpr.Match(tokens, ref cursor, out var valueNameExpr))
+            VariableExpr valueNameExpr;
+            if (!VariableExpr.Match(tokens, ref cursor, out var _valueNameExpr))
                 throw new NuaParseException("Require variable after 'for' keyword");
+            valueNameExpr = (VariableExpr)_valueNameExpr;
 
             if (cursor >= tokens.Count)
                 throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression");
@@ -24,8 +26,9 @@ namespace Nua.CompileService.Syntaxes
             if (tokens[cursor].Kind == TokenKind.OptComma)
             {
                 cursor++;
-                if (!VariableExpr.Match(tokens, ref cursor, out keyNameExpr))
+                if (!VariableExpr.Match(tokens, ref cursor, out var _keyNameExpr))
                     throw new NuaParseException("Require variable after comma in 'for' expression");
+                keyNameExpr = (VariableExpr)_keyNameExpr;
 
                 if (cursor >= tokens.Count)
                     throw new NuaParseException("Require 'in' or 'of' after variable name in 'for' expression");

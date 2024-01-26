@@ -4,7 +4,7 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class UnaryExpr : Expr
     {
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out UnaryExpr? expr)
+        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
 

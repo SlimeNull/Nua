@@ -11,7 +11,7 @@ namespace Nua.CompileService.Syntaxes
             return null;
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ContinueExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
 
@@ -21,7 +21,7 @@ namespace Nua.CompileService.Syntaxes
                 return false;
 
             index++;
-            expr = new();
+            expr = new ContinueExpr();
             return true;
         }
     }

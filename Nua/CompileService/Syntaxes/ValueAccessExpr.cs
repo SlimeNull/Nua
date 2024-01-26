@@ -6,20 +6,31 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueAccessExpr : PrimaryExpr
     {
-        public ValueAccessExpr(VariableExpr variable, ValueAccessTailExpr tail)
+        public ValueAccessExpr(ValueExpr value, ValueAccessTailExpr tail)
         {
-            Variable = variable ?? throw new ArgumentNullException(nameof(variable));
-            Tail = tail ?? throw new ArgumentNullException(nameof(tail));
+            Value = value ?? throw new ArgumentNullException(nameof(value));
+            Tail = tail;
         }
 
-        public VariableExpr Variable { get; }
+        public ValueExpr Value { get; }
         public ValueAccessTailExpr Tail { get; }
 
-        public override NuaValue? Eval(NuaContext context) => Tail.Eval(context, Variable);
-        public void SetMemberValue(NuaContext context, NuaValue? value) => Tail.SetMemberValue(context, Variable, value);
-        public void SetMemberValue(NuaContext context, Expr valueExpr) => Tail.SetMemberValue(context, Variable, valueExpr);
+        public override NuaValue? Eval(NuaContext context)
+        {
+            return Tail.Eval(context, Value);
+        }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueAccessExpr? expr)
+        public void SetMemberValue(NuaContext context, NuaValue? value)
+        {
+            Tail.SetMemberValue(context, Value, value);
+        }
+
+        public void SetMemberValue(NuaContext context, Expr valueExpr)
+        {
+            Tail.SetMemberValue(context, Value, valueExpr.Eval(context));
+        }
+
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             if (index < 0 || index >= tokens.Count)
@@ -29,10 +40,9 @@ namespace Nua.CompileService.Syntaxes
 
             if (!VariableExpr.Match(tokens, ref cursor, out var variable))
                 return false;
-            if (!ValueAccessTailExpr.Match(tokens, ref cursor, out var tail))
-                return false;
+            ValueAccessTailExpr.Match(tokens, ref cursor, out var tail);
 
-            expr = new ValueAccessExpr(variable, tail);
+            expr = tail != null ? new ValueAccessExpr((VariableExpr)variable, tail) : (VariableExpr)variable;
             index = cursor;
             return true;
         }

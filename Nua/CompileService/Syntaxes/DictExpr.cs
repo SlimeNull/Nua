@@ -26,7 +26,7 @@ namespace Nua.CompileService.Syntaxes
             return dict;
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out DictExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;

@@ -21,7 +21,7 @@ namespace Nua.CompileService.Syntaxes
             return list;
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ListExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             if (index < 0 || index >= tokens.Count)

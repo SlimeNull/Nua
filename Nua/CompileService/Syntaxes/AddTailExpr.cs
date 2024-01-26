@@ -79,21 +79,19 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AddTailExpr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.OptAdd &&
-                tokens[index].Kind != TokenKind.OptMin)
+            int cursor = index;
+
+            Token operatorToken;
+            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAdd, out operatorToken) &&
+                !TokenMatch(tokens, ref cursor, TokenKind.OptMin, out operatorToken))
                 return false;
 
-            var operation = tokens[index].Kind switch
+            var operation = operatorToken.Kind switch
             {
                 TokenKind.OptAdd => AddOperation.Add,
                 TokenKind.OptMin => AddOperation.Min,
                 _ => AddOperation.Add
             };
-
-            int cursor = index;
-            cursor++;
 
             if (!Expr.Match(ExprLevel.Mul, tokens, ref cursor, out var right))
                 return false;

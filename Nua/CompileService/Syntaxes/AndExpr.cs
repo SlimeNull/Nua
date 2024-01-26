@@ -24,18 +24,17 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(false);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AndExpr? expr)
+        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
             if (!Expr.Match(ExprLevel.Equal, tokens, ref cursor, out var left))
                 return false;
-            if (!AndTailExpr.Match(tokens, ref cursor, out var tail))
-                return false;
+            AndTailExpr.Match(tokens, ref cursor, out var tail);
 
             index = cursor;
-            expr = new AndExpr(left, tail);
+            expr = tail != null ? new AndExpr(left, tail) : left;
             return true;
         }
     }

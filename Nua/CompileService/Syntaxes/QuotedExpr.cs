@@ -14,7 +14,7 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Eval(NuaContext context) => Content.Eval(context);
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out QuotedExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             if (index < 0 || index >= tokens.Count)

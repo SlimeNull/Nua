@@ -3,8 +3,6 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes
 {
-
-
     public class OrExpr : Expr
     {
         public OrExpr(Expr left, OrTailExpr tail)
@@ -32,18 +30,17 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(true);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out OrExpr? expr)
+        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
             if (!Expr.Match(ExprLevel.And, tokens, ref cursor, out var left))
                 return false;
-            if (!OrTailExpr.Match(tokens, ref cursor, out var tail))
-                return false;
+            OrTailExpr.Match(tokens, ref cursor, out var tail);
 
             index = cursor;
-            expr = new OrExpr(left, tail);
+            expr = tail != null ? new OrExpr(left, tail) : left;
             return true;
         }
     }

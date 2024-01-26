@@ -1,4 +1,5 @@
-﻿using Nua;
+﻿using System.Diagnostics;
+using Nua;
 using Nua.CompileService;
 using Nua.CompileService.Syntaxes;
 using Nua.Types;
@@ -57,6 +58,8 @@ namespace TestConsole
             context.Set("len", new NuaLenFunction());
             context.Set("print", new NuaPrintFunction());
 
+            Stopwatch sw = new();
+
             while (true)
             {
                 Console.Write(">>> ");
@@ -70,7 +73,11 @@ namespace TestConsole
 
                 try
                 {
+                    sw.Restart();
                     var expr = Parser.Parse(tokens);
+                    sw.Stop();
+                    Console.WriteLine($"解析耗时: {sw.ElapsedMilliseconds}ms");
+
                     var result = expr?.Eval(context);
 
                     Console.WriteLine(expr);

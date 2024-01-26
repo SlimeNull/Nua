@@ -80,7 +80,7 @@ namespace Nua.CompileService.Syntaxes
                 return boolean.Value;
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out IfExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;

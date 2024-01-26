@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
             context.Set(Name, newValue);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out VariableExpr? expr)
+        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             if (index < 0 || index >= tokens.Count)
