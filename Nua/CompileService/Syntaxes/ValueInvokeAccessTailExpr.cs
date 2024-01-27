@@ -14,8 +14,11 @@ namespace Nua.CompileService.Syntaxes
 
         public IReadOnlyList<Expr> Parameters { get; }
 
-        public override NuaValue? Eval(NuaContext context, NuaValue valueToAccess)
+        public override NuaValue? Eval(NuaContext context, NuaValue? valueToAccess)
         {
+            if (valueToAccess == null)
+                throw new NuaEvalException("Unable to invoke a null value");
+
             if (valueToAccess is not NuaFunction function)
                 throw new NuaEvalException("Unable to invoke a non-function value");
 
@@ -23,7 +26,12 @@ namespace Nua.CompileService.Syntaxes
                 .Select(p => p.Eval(context))
                 .ToArray();
 
-            return function.Invoke(context, parameterValues);
+            var result = function.Invoke(context, parameterValues);
+
+            if (NextTail != null)
+                result = NextTail.Eval(context, result);
+
+            return result;
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)

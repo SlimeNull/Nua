@@ -12,23 +12,22 @@ namespace Nua.CompileService.Syntaxes
 
         public Expr Index { get; }
 
-        public override NuaValue? Eval(NuaContext context, NuaValue valueToAccess)
+        public override NuaValue? Eval(NuaContext context, NuaValue? valueToAccess)
         {
-            NuaValue? valueToIndex = valueToAccess;
-
-            if (valueToIndex == null)
+            if (valueToAccess == null)
                 throw new NuaEvalException("Unable to index a null value");
-
-            if (valueToIndex is NuaTable table)
+            
+            NuaValue? result;
+            if (valueToAccess is NuaTable table)
             {
                 NuaValue? index = Index.Eval(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
 
-                return table.Get(index);
+                result = table.Get(index);
             }
-            else if (valueToIndex is NuaList list)
+            else if (valueToAccess is NuaList list)
             {
                 NuaValue? index = Index.Eval(context);
 
@@ -39,13 +38,13 @@ namespace Nua.CompileService.Syntaxes
 
                 int intIndex = (int)number.Value;
                 if (intIndex != number.Value)
-                    return null;
+                    result = null;
                 if (intIndex < 0 || intIndex >= list.Storage.Count)
-                    return null;
+                    result = null;
 
-                return list.Storage[intIndex];
+                result = list.Storage[intIndex];
             }
-            else if (valueToIndex is NuaString str)
+            else if (valueToAccess is NuaString str)
             {
                 NuaValue? index = Index.Eval(context);
 
@@ -56,16 +55,21 @@ namespace Nua.CompileService.Syntaxes
 
                 int intIndex = (int)number.Value;
                 if (intIndex != number.Value)
-                    return null;
+                    result = null;
                 if (intIndex < 0 || intIndex >= str.Value.Length)
-                    return null;
+                    result = null;
 
-                return new NuaString(str.Value.Substring(intIndex, 1));
+                result = new NuaString(str.Value.Substring(intIndex, 1));
             }
             else
             {
                 throw new NuaEvalException("Only Dictionary, List and String can be indexed");
             }
+
+            if (NextTail != null)
+                result = NextTail.Eval(context, result);
+
+            return result;
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
