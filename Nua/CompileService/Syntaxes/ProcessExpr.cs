@@ -12,6 +12,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {
             return
+                ReturnExpr.Match(tokens, ref index, out expr) ||
                 BreakExpr.Match(tokens, ref index, out expr) ||
                 ContinueExpr.Match(tokens, ref index, out expr) ||
                 ForExpr.Match(tokens, ref index, out expr) ||

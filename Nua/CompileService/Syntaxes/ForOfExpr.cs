@@ -50,7 +50,7 @@ namespace Nua.CompileService.Syntaxes
             if (endValue >= startValue)
             {
                 stepValue = Math.Abs(stepValue);
-                for (double value = startValue; value < endValue; value += stepValue)
+                for (double value = startValue; value <= endValue; value += stepValue)
                 {
                     forContext.Values.Clear();
                     forContext.Values[ValueName] = new NuaNumber(value);
@@ -66,7 +66,7 @@ namespace Nua.CompileService.Syntaxes
             else
             {
                 stepValue = -Math.Abs(stepValue);
-                for (double value = startValue; value > endValue; value += stepValue)
+                for (double value = startValue; value >= endValue; value += stepValue)
                 {
                     forContext.Values.Clear();
                     forContext.Values[ValueName] = new NuaNumber(value);
