@@ -19,5 +19,16 @@ namespace Nua.CompileService
 
             return expr;
         }
+
+        public static MultiExpr ParseMulti(IList<Token> tokens)
+        {
+            int cursor = 0;
+            if (!MultiExpr.Match(tokens, ref cursor, out var expr))
+                throw new ArgumentException("Invalid expression");
+            if (cursor < tokens.Count)
+                throw new ArgumentException($"Unexpected token '{tokens[cursor]}'");
+
+            return expr;
+        }
     }
 }

@@ -16,7 +16,7 @@ namespace Nua.CompileService.Syntaxes
 
         public NuaValue? Eval(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = IfExpr.Test(Condition.Eval(context));
+            bool condition = NuaUtilities.ConditionTest(Condition.Eval(context));
 
             if (condition)
             {

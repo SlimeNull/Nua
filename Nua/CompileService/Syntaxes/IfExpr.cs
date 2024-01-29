@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
 
         public NuaValue? Eval(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = Test(Condition.Eval(context));
+            bool condition = NuaUtilities.ConditionTest(Condition.Eval(context));
 
             NuaContext ifContext = new NuaContext(context);
 
@@ -68,16 +68,6 @@ namespace Nua.CompileService.Syntaxes
         public override NuaValue? Eval(NuaContext context, out EvalState state)
         {
             return Eval(context, out _, out state);
-        }
-
-        public static bool Test(NuaValue? value)
-        {
-            if (value == null)
-                return false;
-            if (value is not NuaBoolean boolean)
-                return true;
-            else
-                return boolean.Value;
         }
 
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)

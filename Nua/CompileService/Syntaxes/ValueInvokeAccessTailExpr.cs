@@ -49,7 +49,7 @@ namespace Nua.CompileService.Syntaxes
                 if (chain != null)
                     throw new NuaParseException("Require ')' after '(' while parsing 'value-access-expression'");
                 else
-                    throw new NuaParseException("Require parameters after '(' while parsing 'value-access-expression'");
+                    throw new NuaParseException("Require parameter names after '(' while parsing 'value-access-expression'");
             }
 
             ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
