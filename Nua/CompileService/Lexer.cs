@@ -232,6 +232,19 @@ namespace Nua.CompileService
 
                     yield return new Token(TokenKind.String, sb.ToString(), tokenLn, tokenCol);
                 }
+                else if (cch == '#')
+                {
+                    while (true)
+                    {
+                        var nextCh = reader.Peek();
+
+                        if (nextCh is '\r' or '\n' or -1)
+                            break;
+
+                        col++;
+                        reader.Read();
+                    }
+                }
                 else
                 {
                     int tokenLn = ln;
