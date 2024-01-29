@@ -5,7 +5,7 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ContinueExpr : ProcessExpr
     {
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
             state = EvalState.Continue;
             return null;

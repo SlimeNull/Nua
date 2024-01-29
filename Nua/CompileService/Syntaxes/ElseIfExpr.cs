@@ -14,9 +14,9 @@ namespace Nua.CompileService.Syntaxes
         public Expr Condition { get; }
         public MultiExpr? Body { get; }
 
-        public NuaValue? Eval(NuaContext context, out bool executed, out EvalState state)
+        public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = NuaUtilities.ConditionTest(Condition.Eval(context));
+            bool condition = NuaUtilities.ConditionTest(Condition.Evaluate(context));
 
             if (condition)
             {
@@ -28,7 +28,7 @@ namespace Nua.CompileService.Syntaxes
                     return null;
                 }
 
-                return Body.Eval(context, out state);
+                return Body.Evaluate(context, out state);
             }
 
             executed = false;
@@ -36,9 +36,9 @@ namespace Nua.CompileService.Syntaxes
             return null;
         }
 
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            return Eval(context, out _, out state);
+            return Evaluate(context, out _, out state);
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ElseIfExpr? expr)

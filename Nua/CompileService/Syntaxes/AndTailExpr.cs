@@ -14,16 +14,16 @@ namespace Nua.CompileService.Syntaxes
         public Expr Right { get; }
         public AndTailExpr? NextTail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            var rightValue = Right.Eval(context);
+            var rightValue = Right.Evaluate(context);
 
             if (NextTail == null)
                 return rightValue;
 
             if (rightValue is NuaBoolean leftBoolean && leftBoolean.Value)
             {
-                return NextTail.Eval(context);
+                return NextTail.Evaluate(context);
             }
 
             return new NuaBoolean(false);

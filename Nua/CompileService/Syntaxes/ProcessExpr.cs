@@ -5,9 +5,9 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class ProcessExpr : Expr
     {
-        public abstract NuaValue? Eval(NuaContext context, out EvalState state);
+        public abstract NuaValue? Evaluate(NuaContext context, out EvalState state);
 
-        public override NuaValue? Eval(NuaContext context) => Eval(context, out _);
+        public override NuaValue? Evaluate(NuaContext context) => Evaluate(context, out _);
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {

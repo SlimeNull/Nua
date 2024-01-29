@@ -12,9 +12,9 @@ namespace Nua.CompileService.Syntaxes
 
         public Expr Expr { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            var value = Expr.Eval(context);
+            var value = Expr.Evaluate(context);
 
             if (value == null)
                 throw new NuaEvalException("Unable to take negation of null value");

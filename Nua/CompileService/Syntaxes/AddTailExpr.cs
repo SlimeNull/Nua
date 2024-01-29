@@ -16,9 +16,9 @@ namespace Nua.CompileService.Syntaxes
         public AddOperation Operation { get; }
         public AddTailExpr? NextTail { get; }
 
-        public NuaValue? Eval(NuaContext context, string leftValue)
+        public NuaValue? Evaluate(NuaContext context, string leftValue)
         {
-            var rightValue = Right.Eval(context);
+            var rightValue = Right.Evaluate(context);
 
             if (rightValue == null)
                 throw new NuaEvalException("Unable to plus on a null value");
@@ -33,14 +33,14 @@ namespace Nua.CompileService.Syntaxes
             };
 
             if (NextTail != null)
-                return NextTail.Eval(context, result);
+                return NextTail.Evaluate(context, result);
 
             return new NuaString(result);
         }
 
-        public NuaValue? Eval(NuaContext context, double leftValue)
+        public NuaValue? Evaluate(NuaContext context, double leftValue)
         {
-            var rightValue = Right.Eval(context);
+            var rightValue = Right.Evaluate(context);
 
             if (rightValue == null)
                 throw new NuaEvalException("Unable to plus on a null value");
@@ -55,26 +55,26 @@ namespace Nua.CompileService.Syntaxes
             };
 
             if (NextTail != null)
-                return NextTail.Eval(context, result);
+                return NextTail.Evaluate(context, result);
 
             return new NuaNumber(result);
         }
 
-        public NuaValue? Eval(NuaContext context, Expr left)
+        public NuaValue? Evaluate(NuaContext context, Expr left)
         {
-            var leftValue = left.Eval(context);
+            var leftValue = left.Evaluate(context);
 
             if (leftValue == null)
                 throw new NuaEvalException("Unable to plus on a null value");
             if (leftValue is NuaNumber leftNumber)
-                return Eval(context, leftNumber.Value);
+                return Evaluate(context, leftNumber.Value);
             if (leftValue is NuaString leftString)
-                return Eval(context, leftString.Value);
+                return Evaluate(context, leftString.Value);
 
             throw new NuaEvalException("Plus calculation can be only used on Number and String value");
         }
 
-        public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AddTailExpr? expr)
         {

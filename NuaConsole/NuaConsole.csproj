@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Stdlib\" />
+    <ProjectReference Include="..\Nua\Nua.csproj" />
   </ItemGroup>
 
 </Project>

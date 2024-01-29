@@ -16,9 +16,9 @@ namespace Nua.CompileService.Syntaxes
             NextTail = nextTail;
         }
 
-        public NuaValue Eval(NuaContext context, NuaValue? leftValue)
+        public NuaValue Evaluate(NuaContext context, NuaValue? leftValue)
         {
-            var rightValue = Right.Eval(context);
+            var rightValue = Right.Evaluate(context);
 
             var result = Operation switch
             {
@@ -30,9 +30,9 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(result);
         }
 
-        public NuaValue Eval(NuaContext context, Expr expr) => Eval(context, expr.Eval(context));
+        public NuaValue Evaluate(NuaContext context, Expr expr) => Evaluate(context, expr.Evaluate(context));
 
-        public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out EqualTailExpr? expr)
         {

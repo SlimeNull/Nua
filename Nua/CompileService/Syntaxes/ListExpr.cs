@@ -12,11 +12,11 @@ namespace Nua.CompileService.Syntaxes
             Values = values;
         }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             NuaList list = new();
             foreach (var value in Values)
-                list.Storage.Add(value.Eval(context));
+                list.Storage.Add(value.Evaluate(context));
 
             return list;
         }

@@ -19,16 +19,16 @@ namespace Nua.CompileService.Syntaxes
         public Expr? Step { get; }
         public MultiExpr Body { get; }
 
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            var start = Start.Eval(context);
+            var start = Start.Evaluate(context);
 
             if (start == null)
                 throw new NuaEvalException("Start value of 'for-of' statement is null");
             if (start is not NuaNumber startNumber)
                 throw new NuaEvalException("Start value of 'for-of' statement not number");
 
-            var end = End.Eval(context);
+            var end = End.Evaluate(context);
 
             if (end == null)
                 throw new NuaEvalException("End value of 'for-of' statement is null");
@@ -36,7 +36,7 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaEvalException("End value of 'for-of' statement not number");
 
             NuaNumber? stepNumber = null;
-            var step = Step?.Eval(context) as NuaNumber;
+            var step = Step?.Evaluate(context) as NuaNumber;
 
             if (Step != null && stepNumber == null)
                 throw new NuaEvalException("Step value of 'for-of' statement not number");
@@ -55,7 +55,7 @@ namespace Nua.CompileService.Syntaxes
                     forContext.Values.Clear();
                     forContext.Values[ValueName] = new NuaNumber(value);
 
-                    result = Body.Eval(forContext, out var bodyState);
+                    result = Body.Evaluate(forContext, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -71,7 +71,7 @@ namespace Nua.CompileService.Syntaxes
                     forContext.Values.Clear();
                     forContext.Values[ValueName] = new NuaNumber(value);
 
-                    result = Body.Eval(forContext, out var bodyState);
+                    result = Body.Evaluate(forContext, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;

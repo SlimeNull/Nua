@@ -12,14 +12,14 @@ namespace Nua.CompileService.Syntaxes
             NextTail = nextTail;
         }
 
-        public NuaValue? Eval(NuaContext context, Expr expr)
+        public NuaValue? Evaluate(NuaContext context, Expr expr)
         {
-            var valueToAccess = expr.Eval(context);
+            var valueToAccess = expr.Evaluate(context);
 
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to access member of null value");
 
-            return Eval(context, valueToAccess);
+            return Evaluate(context, valueToAccess);
         }
 
         public void SetMemberValue(NuaContext context, NuaValue valueToAccess, NuaValue? newMemberValue)
@@ -29,7 +29,7 @@ namespace Nua.CompileService.Syntaxes
 
             if (NextTail != null)
             {
-                var value = Eval(context);
+                var value = Evaluate(context);
 
                 if (value == null)
                     throw new NuaEvalException("Unable to access member of null value");
@@ -42,7 +42,7 @@ namespace Nua.CompileService.Syntaxes
                 if (this is ValueMemberAccessTailExpr memberAccessTail)
                     key = new NuaString(memberAccessTail.Name);
                 else if (this is ValueIndexAccessTailExpr indexAccessTail)
-                    key = indexAccessTail.Index.Eval(context);
+                    key = indexAccessTail.Index.Evaluate(context);
                 else
                     throw new NuaEvalException("Only Value member or Variable can be assigned");
 
@@ -53,7 +53,7 @@ namespace Nua.CompileService.Syntaxes
 
         public void SetMemberValue(NuaContext context, Expr expr, NuaValue? newMemberValue)
         {
-            var valueToAccess = expr.Eval(context);
+            var valueToAccess = expr.Evaluate(context);
 
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to access member of null value");
@@ -64,13 +64,13 @@ namespace Nua.CompileService.Syntaxes
         public void SetMemberValue(NuaContext context, Expr expr, Expr newMemberValueExpr)
         {
 
-            var newMemberValue = newMemberValueExpr.Eval(context);
+            var newMemberValue = newMemberValueExpr.Evaluate(context);
 
             SetMemberValue(context, expr, newMemberValue);
         }
 
-        public abstract NuaValue? Eval(NuaContext context, NuaValue? valueToAccess);
-        public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
+        public abstract NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess);
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
         {

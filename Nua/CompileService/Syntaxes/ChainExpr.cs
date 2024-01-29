@@ -14,11 +14,11 @@ namespace Nua.CompileService.Syntaxes
 
         public IReadOnlyList<Expr> Expressions { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             NuaValue? value = null;
             foreach (var expr in Expressions)
-                value = expr?.Eval(context);
+                value = expr?.Evaluate(context);
 
             return value;
         }

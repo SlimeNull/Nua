@@ -29,7 +29,7 @@ namespace TestConsole
 
                 try
                 {
-                    var result = runtime.Eval(input);
+                    var result = runtime.Evaluate(input);
 
                     if (result != null)
                         Console.WriteLine(result);

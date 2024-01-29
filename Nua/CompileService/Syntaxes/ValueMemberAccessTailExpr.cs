@@ -15,7 +15,7 @@ namespace Nua.CompileService.Syntaxes
 
         public string Name { get; }
 
-        public override NuaValue? Eval(NuaContext context, NuaValue? valueToAccess)
+        public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to access member of a null value");
@@ -27,12 +27,12 @@ namespace Nua.CompileService.Syntaxes
             var value = table.Get(key); 
 
             if (NextTail != null)
-                value = NextTail.Eval(context, value);
+                value = NextTail.Evaluate(context, value);
 
             return value;
         }
 
-        public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {

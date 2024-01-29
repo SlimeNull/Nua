@@ -18,7 +18,7 @@ namespace Nua.CompileService.Syntaxes
         public Expr Key { get; }
         public Expr Value { get; }
 
-        public override NuaValue? Eval(NuaContext context) => Value.Eval(context);
+        public override NuaValue? Evaluate(NuaContext context) => Value.Evaluate(context);
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out TableMemberExpr? expr)
         {

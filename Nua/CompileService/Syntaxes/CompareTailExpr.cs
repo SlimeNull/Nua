@@ -16,11 +16,11 @@ namespace Nua.CompileService.Syntaxes
             NextTail = nextTail;
         }
 
-        public NuaValue? Eval(NuaContext context, NuaValue? leftValue)
+        public NuaValue? Evaluate(NuaContext context, NuaValue? leftValue)
         {
             if (leftValue is not NuaNumber leftNumber)
                 throw new NuaEvalException("Unable to compare on a non-number value");
-            if (Right.Eval(context) is not NuaNumber rightNumber)
+            if (Right.Evaluate(context) is not NuaNumber rightNumber)
                 throw new NuaEvalException("Unable to compare on a non-number value");
 
             bool result = Operation switch
@@ -35,12 +35,12 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(result);
         }
 
-        public NuaValue? Eval(NuaContext context, Expr left)
+        public NuaValue? Evaluate(NuaContext context, Expr left)
         {
-            return Eval(context, left.Eval(context));
+            return Evaluate(context, left.Evaluate(context));
         }
 
-        public override NuaValue? Eval(NuaContext context) => throw new InvalidOperationException();
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out CompareTailExpr? expr)
         {

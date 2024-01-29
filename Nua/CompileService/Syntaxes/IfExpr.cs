@@ -18,9 +18,9 @@ namespace Nua.CompileService.Syntaxes
         public IReadOnlyList<ElseIfExpr>? ElseIfExpressions { get; }
         public ElseExpr? ElseExpressions { get; }
 
-        public NuaValue? Eval(NuaContext context, out bool executed, out EvalState state)
+        public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = NuaUtilities.ConditionTest(Condition.Eval(context));
+            bool condition = NuaUtilities.ConditionTest(Condition.Evaluate(context));
 
             NuaContext ifContext = new NuaContext(context);
 
@@ -34,7 +34,7 @@ namespace Nua.CompileService.Syntaxes
                     return null;
                 }
 
-                return Body.Eval(ifContext, out state);
+                return Body.Evaluate(ifContext, out state);
             }
             else
             {
@@ -42,7 +42,7 @@ namespace Nua.CompileService.Syntaxes
                 {
                     foreach (var elseif in ElseIfExpressions)
                     {
-                        var value = elseif.Eval(ifContext, out var elseIfExecuted, out var elseIfState);
+                        var value = elseif.Evaluate(ifContext, out var elseIfExecuted, out var elseIfState);
 
                         if (elseIfExecuted)
                         {
@@ -56,7 +56,7 @@ namespace Nua.CompileService.Syntaxes
                 if (ElseExpressions != null)
                 {
                     executed = true;
-                    return ElseExpressions.Eval(ifContext, out state);
+                    return ElseExpressions.Evaluate(ifContext, out state);
                 }
 
                 executed = false;
@@ -65,9 +65,9 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            return Eval(context, out _, out state);
+            return Evaluate(context, out _, out state);
         }
 
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)

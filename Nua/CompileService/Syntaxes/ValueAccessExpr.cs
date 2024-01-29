@@ -15,9 +15,9 @@ namespace Nua.CompileService.Syntaxes
         public ValueExpr Value { get; }
         public ValueAccessTailExpr Tail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            return Tail.Eval(context, Value);
+            return Tail.Evaluate(context, Value);
         }
 
         public void SetMemberValue(NuaContext context, NuaValue? value)
@@ -27,7 +27,7 @@ namespace Nua.CompileService.Syntaxes
 
         public void SetMemberValue(NuaContext context, Expr valueExpr)
         {
-            Tail.SetMemberValue(context, Value, valueExpr.Eval(context));
+            Tail.SetMemberValue(context, Value, valueExpr.Evaluate(context));
         }
 
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)

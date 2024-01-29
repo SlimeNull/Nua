@@ -25,7 +25,7 @@ namespace Nua
             Context = new NuaContext(rootContext);
         }
 
-        public NuaValue? Eval(string expression)
+        public NuaValue? Evaluate(string expression)
         {
             ArgumentNullException.ThrowIfNull(expression, nameof(expression));
 
@@ -33,7 +33,7 @@ namespace Nua
             var tokens = Lexer.Lex(reader).ToArray();
             var multiExpr = Parser.ParseMulti(tokens);
 
-            var result = multiExpr.Eval(Context);
+            var result = multiExpr.Evaluate(Context);
 
             return result;
         }

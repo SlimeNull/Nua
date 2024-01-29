@@ -16,21 +16,21 @@ namespace Nua.CompileService.Syntaxes
         public AssignOperation Operation { get; }
         public AssignTailExpr? NextTail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             if (NextTail == null)
-                return Right.Eval(context);
+                return Right.Evaluate(context);
 
             if (Right is ValueAccessExpr valueAccessExpr)
             {
-                var value = NextTail.Eval(context);
+                var value = NextTail.Evaluate(context);
                 valueAccessExpr.SetMemberValue(context, value);
 
                 return value;
             }
             else if (Right is VariableExpr variableExpr)
             {
-                var value = NextTail.Eval(context);
+                var value = NextTail.Evaluate(context);
                 variableExpr.SetValue(context, value);
 
                 return value;

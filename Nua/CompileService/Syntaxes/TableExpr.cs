@@ -14,13 +14,13 @@ namespace Nua.CompileService.Syntaxes
                 .AsReadOnly();
         }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             var table = new NuaNativeTable();
 
             foreach (var member in Members)
             {
-                table.Set(member.Key.Eval(context)!, member.Value.Eval(context));
+                table.Set(member.Key.Evaluate(context)!, member.Value.Evaluate(context));
             }
 
             return table;

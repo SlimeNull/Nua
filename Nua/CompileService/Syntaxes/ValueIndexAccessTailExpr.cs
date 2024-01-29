@@ -12,7 +12,7 @@ namespace Nua.CompileService.Syntaxes
 
         public Expr Index { get; }
 
-        public override NuaValue? Eval(NuaContext context, NuaValue? valueToAccess)
+        public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to index a null value");
@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
             NuaValue? result;
             if (valueToAccess is NuaTable table)
             {
-                NuaValue? index = Index.Eval(context);
+                NuaValue? index = Index.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -29,7 +29,7 @@ namespace Nua.CompileService.Syntaxes
             }
             else if (valueToAccess is NuaList list)
             {
-                NuaValue? index = Index.Eval(context);
+                NuaValue? index = Index.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -46,7 +46,7 @@ namespace Nua.CompileService.Syntaxes
             }
             else if (valueToAccess is NuaString str)
             {
-                NuaValue? index = Index.Eval(context);
+                NuaValue? index = Index.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -67,7 +67,7 @@ namespace Nua.CompileService.Syntaxes
             }
 
             if (NextTail != null)
-                result = NextTail.Eval(context, result);
+                result = NextTail.Evaluate(context, result);
 
             return result;
         }

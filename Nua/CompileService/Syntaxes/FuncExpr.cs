@@ -14,7 +14,7 @@ namespace Nua.CompileService.Syntaxes
             Body = body;
         }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
             => new NuaNativeFunction(Body, ParameterNames.ToArray());
 
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)

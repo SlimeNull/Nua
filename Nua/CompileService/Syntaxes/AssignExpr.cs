@@ -14,18 +14,18 @@ namespace Nua.CompileService.Syntaxes
         public Expr Left { get; }
         public AssignTailExpr Tail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             if (Left is ValueAccessExpr valueAccessExpr)
             {
-                var value = Tail.Eval(context);
+                var value = Tail.Evaluate(context);
                 valueAccessExpr.SetMemberValue(context, value);
 
                 return value;
             }
             else if (Left is VariableExpr variableExpr)
             {
-                var value = Tail.Eval(context);
+                var value = Tail.Evaluate(context);
                 variableExpr.SetValue(context, value);
 
                 return value;

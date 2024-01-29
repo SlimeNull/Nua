@@ -12,7 +12,7 @@ namespace Nua.CompileService.Syntaxes
 
         public Expr Content { get; }
 
-        public override NuaValue? Eval(NuaContext context) => Content.Eval(context);
+        public override NuaValue? Evaluate(NuaContext context) => Content.Evaluate(context);
 
         public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
         {

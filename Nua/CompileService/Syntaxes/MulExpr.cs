@@ -14,9 +14,9 @@ namespace Nua.CompileService.Syntaxes
         public Expr Left { get; }
         public MulTailExpr Tail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            return Tail.Eval(context, Left);
+            return Tail.Evaluate(context, Left);
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)

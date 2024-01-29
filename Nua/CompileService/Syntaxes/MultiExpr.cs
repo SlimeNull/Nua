@@ -14,14 +14,14 @@ namespace Nua.CompileService.Syntaxes
 
         public IReadOnlyList<Expr> Expressions { get; }
 
-        public NuaValue? Eval(NuaContext context, out EvalState state)
+        public NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
             NuaValue? value = null;
             foreach (var expr in Expressions)
             {
                 if (expr is ProcessExpr processExpr)
                 {
-                    value = processExpr.Eval(context, out var subState);
+                    value = processExpr.Evaluate(context, out var subState);
 
                     if (subState != EvalState.None)
                     {
@@ -31,7 +31,7 @@ namespace Nua.CompileService.Syntaxes
                 }
                 else
                 {
-                    value = expr?.Eval(context);
+                    value = expr?.Evaluate(context);
                 }
             }
 
@@ -39,9 +39,9 @@ namespace Nua.CompileService.Syntaxes
             return value;
         }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            return Eval(context, out _);
+            return Evaluate(context, out _);
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out MultiExpr? expr)

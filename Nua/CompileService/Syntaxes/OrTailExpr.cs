@@ -15,16 +15,16 @@ namespace Nua.CompileService.Syntaxes
         public Expr Right { get; }
         public OrTailExpr? NextTail { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
-            var rightValue = Right.Eval(context);
+            var rightValue = Right.Evaluate(context);
 
             if (rightValue == null)
             {
                 if (NextTail == null)
                     return new NuaBoolean(false);
                 else
-                    return NextTail.Eval(context);
+                    return NextTail.Evaluate(context);
             }
 
             if (rightValue is not NuaBoolean rightBoolean)
@@ -35,7 +35,7 @@ namespace Nua.CompileService.Syntaxes
                 if (NextTail == null)
                     return new NuaBoolean(false);
                 else
-                    return NextTail.Eval(context);
+                    return NextTail.Evaluate(context);
             }
 
             return new NuaBoolean(true);

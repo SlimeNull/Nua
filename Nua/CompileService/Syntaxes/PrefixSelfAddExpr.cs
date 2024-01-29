@@ -14,11 +14,11 @@ namespace Nua.CompileService.Syntaxes
         public Expr Self { get; }
         public bool Negative { get; }
 
-        public override NuaValue? Eval(NuaContext context)
+        public override NuaValue? Evaluate(NuaContext context)
         {
             if (Self is ValueAccessExpr memberAccessExpr)
             {
-                var self = memberAccessExpr.Eval(context);
+                var self = memberAccessExpr.Evaluate(context);
 
                 if (self == null)
                     throw new NuaEvalException("Unable to apply self-increment on a null value");
@@ -34,7 +34,7 @@ namespace Nua.CompileService.Syntaxes
             }
             else if (Self is VariableExpr variableExpr)
             {
-                var self = variableExpr.Eval(context);
+                var self = variableExpr.Evaluate(context);
 
                 if (self == null)
                     throw new NuaEvalException("Unable to apply self-increment on a null value");

@@ -4,7 +4,7 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class Syntax
     {
-        public abstract NuaValue? Eval(NuaContext context);
+        public abstract NuaValue? Evaluate(NuaContext context);
 
         protected static bool TokenMatch(IList<Token> tokens, ref int index, TokenKind requiredTokenKind, out Token token)
         {

@@ -12,7 +12,7 @@ namespace Nua.CompileService.Syntaxes
 
         public MultiExpr? Body { get; }
 
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
             if (Body == null)
             {
@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
                 return null;
             }
 
-            return Body.Eval(context, out state);
+            return Body.Evaluate(context, out state);
         }
 
         public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ElseExpr? expr)

@@ -30,13 +30,13 @@ namespace Nua.Types
             {
                 if (expr is ProcessExpr processExpr)
                 {
-                    result = processExpr.Eval(localContext, out var state);
+                    result = processExpr.Evaluate(localContext, out var state);
                     if (state != EvalState.None)
                         break;
                 }
                 else
                 {
-                    result = expr.Eval(localContext);
+                    result = expr.Evaluate(localContext);
                 }
             }
 

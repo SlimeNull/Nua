@@ -19,11 +19,11 @@ namespace Nua.CompileService.Syntaxes
         public Expr Iterable { get; }
         public MultiExpr Body { get; }
 
-        public override NuaValue? Eval(NuaContext context, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
             NuaContext forContext = new(context);
 
-            var iterableValue = Iterable.Eval(context);
+            var iterableValue = Iterable.Evaluate(context);
             NuaValue? result = null;
 
             if (iterableValue is NuaTable table)
@@ -37,7 +37,7 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         forContext.Values[KeyName] = kv.Key;
 
-                    result = Body.Eval(forContext, out var bodyState);
+                    result = Body.Evaluate(forContext, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -57,7 +57,7 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         forContext.Values[KeyName] = new NuaNumber(i);
 
-                    result = Body.Eval(forContext, out var bodyState);
+                    result = Body.Evaluate(forContext, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -76,7 +76,7 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         forContext.Values[KeyName] = new NuaNumber(i);
 
-                    result = Body.Eval(forContext, out var bodyState);
+                    result = Body.Evaluate(forContext, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
