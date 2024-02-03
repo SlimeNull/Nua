@@ -1,12 +1,18 @@
-﻿namespace Nua.Types
+﻿
+namespace Nua.Types
 {
     public class NuaDelegateFunction : NuaFunction
     {
+        private readonly string[] _parameterNames;
+
         public NuaFunctionHandler Handler { get; }
 
-        public NuaDelegateFunction(NuaFunctionHandler handler)
+        public override IReadOnlyList<string> ParameterNames => _parameterNames.AsReadOnly();
+
+        public NuaDelegateFunction(NuaFunctionHandler handler, params string[] parameterNames)
         {
             Handler = handler;
+            _parameterNames = parameterNames;
         }
 
         public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)

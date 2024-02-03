@@ -26,7 +26,7 @@ namespace Nua.Stdlib
 
                             list.Storage.Add(parameters[1]);
                             return list;
-                        }),
+                        }, "item"),
                     [new NuaString("add_range")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -37,7 +37,7 @@ namespace Nua.Stdlib
 
                             list.Storage.AddRange(sublist.Storage);
                             return list;
-                        }),
+                        }, "items"),
                     [new NuaString("clear")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -102,7 +102,7 @@ namespace Nua.Stdlib
                             {
                                 throw OperationsHelper.BuildParamException(functionName, 1, $"{NuaValue.FunctionTypeName} or {NuaValue.NumberTypeName}", parameters[1]?.TypeName ?? "null");
                             }
-                        }),
+                        }, "start_index or predicate", "count or predicate", "predicate"),
                     [new NuaString("find_last")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -157,7 +157,7 @@ namespace Nua.Stdlib
                             {
                                 throw OperationsHelper.BuildParamException(functionName, 1, $"{NuaValue.FunctionTypeName} or {NuaValue.NumberTypeName}", parameters[1]?.TypeName ?? "null");
                             }
-                        }),
+                        }, "start_index or predicate", "count or predicate", "predicate"),
                     [new NuaString("find_index")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -192,7 +192,7 @@ namespace Nua.Stdlib
                             {
                                 throw OperationsHelper.BuildParamException(functionName, 1, $"{NuaValue.FunctionTypeName} or {NuaValue.NumberTypeName}", parameters[1]?.TypeName ?? "null");
                             }
-                        }),
+                        }, "start_index or predicate", "count or predicate", "predicate"),
                     [new NuaString("find_last_index")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -227,7 +227,7 @@ namespace Nua.Stdlib
                             {
                                 throw OperationsHelper.BuildParamException(functionName, 1, $"{NuaValue.FunctionTypeName} or {NuaValue.NumberTypeName}", parameters[1]?.TypeName ?? "null");
                             }
-                        }),
+                        }, "start_index or predicate", "count or predicate", "predicate"),
                     [new NuaString("index_of")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -255,7 +255,7 @@ namespace Nua.Stdlib
                             {
                                 return new NuaNumber(list.Storage.IndexOf(item));
                             }
-                        }),
+                        }, "item", "start_index or null", "count or null"),
                     [new NuaString("remove_at")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -266,18 +266,34 @@ namespace Nua.Stdlib
                                 list.Storage.RemoveAt(index);
 
                             return list;
-                        }),
+                        }, "index"),
                     [new NuaString("remove")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
-                            var list = OperationsHelper.TakeListParam("remove_at", parameters, 0);
-                            var index = (int)OperationsHelper.TakeNumberParam("remove_at", parameters, 1);
+                            const string functionName = "remove";
+
+                            var list = OperationsHelper.TakeListParam(functionName, parameters, 0);
+                            var index = (int)OperationsHelper.TakeNumberParam(functionName, parameters, 1);
 
                             if (index >= 0 && index < list.Storage.Count)
                                 list.Storage.RemoveAt(index);
 
                             return list;
-                        }),
+                        }, "item"),
+                    [new NuaString("insert")] = new NuaDelegateFunction(
+                        (context, parameters) =>
+                        {
+                            const string functionName = "insert";
+
+                            var list = OperationsHelper.TakeListParam(functionName, parameters, 0);
+                            var index = (int)OperationsHelper.TakeNumberParam(functionName, parameters, 1);
+                            var item = OperationsHelper.TakeAnyParam(functionName, parameters, 2);
+
+                            if (index >= 0 && index < list.Storage.Count)
+                                list.Storage.Insert(index, item);
+
+                            return list;
+                        }, "index", "item"),
                 }
             };
         }

@@ -1,20 +1,24 @@
-﻿using Nua.Types;
+﻿using System.Runtime.CompilerServices;
+using Nua.Types;
 
 namespace Nua.Stdlib
 {
     public static class OperationsHelper
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Exception BuildParamException(string functionName, int index, string expect, string got)
         {
             return new NuaEvalException($"bad parameter #{index} to {functionName} ({expect} expected, got {got})");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void EnsureParamIndex(string functionName, NuaValue?[] parameters, string expect, int index)
         {
             if (index < 0 || index >= parameters.Length)
                 throw BuildParamException(functionName, index, expect, "no value");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NuaValue TakeAnyParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, "any", index);
@@ -25,6 +29,7 @@ namespace Nua.Stdlib
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TakeBooleanParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.BooleanTypeName, index);
@@ -35,6 +40,7 @@ namespace Nua.Stdlib
             return str.Value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string TakeStringParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.StringTypeName, index);
@@ -45,6 +51,7 @@ namespace Nua.Stdlib
             return str.Value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static double TakeNumberParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.NumberTypeName, index);
@@ -55,6 +62,7 @@ namespace Nua.Stdlib
             return number.Value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NuaFunction TakeFunctionParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.FunctionTypeName, index);
@@ -65,6 +73,7 @@ namespace Nua.Stdlib
             return function;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NuaTable TakeTableParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.TableTypeName, index);
@@ -75,6 +84,7 @@ namespace Nua.Stdlib
             return table;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static NuaList TakeListParam(string functionName, NuaValue?[] parameters, int index)
         {
             EnsureParamIndex(functionName, parameters, NuaValue.ListTypeName, index);

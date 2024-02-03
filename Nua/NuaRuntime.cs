@@ -20,6 +20,7 @@ namespace Nua
                     ["len"] = new NuaLenFunction(),
                     ["table"] = TableOperations.Create(),
                     ["list"] = ListOperations.Create(),
+                    ["math"] = MathOperations.Create(),
                 }
             };
 
@@ -73,6 +74,8 @@ namespace Nua
 
         class NuaPrintFunction : NuaFunction
         {
+            public override IReadOnlyList<string> ParameterNames => ["value", "..."];
+
             public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
             {
                 Console.WriteLine(string.Join<NuaValue?>('\t', parameters));
@@ -83,6 +86,8 @@ namespace Nua
 
         class NuaLenFunction : NuaFunction
         {
+            public override IReadOnlyList<string> ParameterNames => ["value", "..."];
+
             public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
             {
                 int len = 0;
