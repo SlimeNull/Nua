@@ -34,23 +34,36 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptDot, out _))
+            if (!TokenMatch(tokens, required, TokenKind.OptDot, ref cursor, out _, out _))
+            {
+                requireMoreTokens = false;
+                message = null;
                 return false;
+            }
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.Identifier, out var idToken))
-                throw new NuaParseException("Require identifier after '.' while parsing 'value-access-expression'");
+            if (!TokenMatch(tokens, true, TokenKind.Identifier, ref cursor, out requireMoreTokens, out var idToken))
+            {
+                message = "Require identifier after '.' while parsing 'value-access-expression'";
+                return false;
+            }
 
             string name = idToken.Value!;
 
-            ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             expr = new ValueMemberAccessTailExpr(name, nextTail);
             index = cursor;
+            message = null;
             return true;
         }
     }

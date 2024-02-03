@@ -41,16 +41,20 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AssignTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out AssignTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAssign, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptAddWith, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptMinWith, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptAssign, ref cursor, out _, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptAddWith, ref cursor, out _, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptMinWith, ref cursor, out _, out operatorToken))
+            {
+                requireMoreTokens = required;
+                message = null;
                 return false;
+            }
 
             AssignOperation operation = operatorToken.Kind switch
             {
@@ -60,13 +64,25 @@ namespace Nua.CompileService.Syntaxes
                 _ => default
             };
 
-            if (!OrExpr.Match(tokens, ref cursor, out var right))
-                return false;
+            if (!OrExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var right))
+            {
+                if (message == null)
+                    message = "Require expression after '=' token while parsing 'assign-tail-expression'";
 
-            Match(tokens, ref cursor, out var nextTail);
+                return false;
+            }
+
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new AssignTailExpr(right, operation, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

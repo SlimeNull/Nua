@@ -55,18 +55,21 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out MulTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out MulTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptMul, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptDiv, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptPow, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptMod, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptDivInt, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptMul, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptDiv, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptPow, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptMod, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptDivInt, ref cursor, out requireMoreTokens, out operatorToken))
+            {
+                message = null;
                 return false;
+            }
 
             var operation = operatorToken.Kind switch
             {
@@ -78,13 +81,26 @@ namespace Nua.CompileService.Syntaxes
                 _ => MulOperation.Mul
             };
 
-            if (!ProcessExpr.Match(tokens, ref cursor, out var right))
-                throw new NuaParseException("Expect expression after '*','/','**','//','%' while parsing 'mul-expression'");
+            if (!ProcessExpr.Match(tokens, true, ref cursor, out _, out message, out var right))
+            {
+                requireMoreTokens = true;
+                if (message == null)
+                    message = "Expect expression after '*','/','**','//','%' while parsing 'mul-expression'";
 
-            Match(tokens, ref cursor, out var nextTail);
+                return false;
+            }
+
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail))
+            {
+                requireMoreTokens = false;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new MulTailExpr(right, operation, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

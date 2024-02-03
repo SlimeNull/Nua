@@ -16,7 +16,7 @@ namespace Nua.CompileService.Syntaxes
         {
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to index a null value");
-            
+
             NuaValue? result;
             if (valueToAccess is NuaTable table)
             {
@@ -72,21 +72,38 @@ namespace Nua.CompileService.Syntaxes
             return result;
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketLeft, out _))
+            if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out requireMoreTokens, out _))
+            {
+                message = null;
                 return false;
+            }
 
-            if (!Expr.MatchAny(tokens, ref cursor, out var indexExpr))
-                throw new NuaParseException("Require index after '[' while parsing 'value-access-expression'");
+            if (!Expr.MatchAny(tokens, required, ref cursor, out _, out message, out var indexExpr))
+            {
+                requireMoreTokens = true;
+                if (message == null)
+                    message = "Require index after '[' while parsing 'value-access-expression'";
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.SquareBracketRight, out _))
-                throw new NuaParseException("Require ']' after index while parsing 'value-access-expression'");
+                return false;
+            }
 
-            ValueAccessTailExpr.Match(tokens, ref cursor, out var nextTail);
+            if (!TokenMatch(tokens, required, TokenKind.SquareBracketRight, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Require ']' after index while parsing 'value-access-expression'";
+                return false;
+            }
+
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new ValueIndexAccessTailExpr(indexExpr, nextTail);

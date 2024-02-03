@@ -20,18 +20,17 @@ namespace Nua.CompileService.Syntaxes
             context.Set(Name, newValue);
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.Identifier ||
-                tokens[index].Value == null)
+            requireMoreTokens = required;
+            message = null;
+
+
+            if (!TokenMatch(tokens, required, TokenKind.Identifier, ref index, out _, out var idToken))
                 return false;
 
-            expr = new VariableExpr(tokens[index].Value!);
-            index++;
-
+            expr = new VariableExpr(idToken.Value!);
             return true;
         }
     }

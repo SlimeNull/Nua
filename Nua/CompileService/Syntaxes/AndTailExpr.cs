@@ -29,20 +29,37 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(false);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AndTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out AndTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdAnd, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdAnd, ref cursor, out _, out _))
+            {
+                requireMoreTokens = required;
+                message = null;
                 return false;
-            if (!EqualExpr.Match(tokens, ref cursor, out var right))
-                throw new NuaParseException("Require 'equal-expression' after 'and' keyword");
+            }
 
-            Match(tokens, ref cursor, out var nextTail);
+            if (!EqualExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
+            {
+                if (message == null)
+                    message = "Require 'equal-expression' after 'and' keyword";
+
+                return false;
+            }
+
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new AndTailExpr(right, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

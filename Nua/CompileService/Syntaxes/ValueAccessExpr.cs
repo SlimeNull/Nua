@@ -30,17 +30,20 @@ namespace Nua.CompileService.Syntaxes
             Tail.SetMemberValue(context, Value, valueExpr.Evaluate(context));
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
-            if (index < 0 || index >= tokens.Count)
-                return false;
-
             int cursor = index;
 
-            if (!ValueExpr.Match(tokens, ref cursor, out var variable))
+            if (!ValueExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var variable))
                 return false;
-            ValueAccessTailExpr.Match(tokens, ref cursor, out var tail);
+
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var tail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             expr = tail != null ? new ValueAccessExpr((ValueExpr)variable, tail) : (ValueExpr)variable;
             index = cursor;

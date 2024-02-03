@@ -42,17 +42,20 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out CompareTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out CompareTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptLss, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptGtr, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptLeq, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptGeq, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptLss, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptGtr, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptLeq, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptGeq, ref cursor, out requireMoreTokens, out operatorToken))
+            {
+                message = null;
                 return false;
+            }
 
             CompareOperation operation = operatorToken.Kind switch
             {
@@ -63,13 +66,20 @@ namespace Nua.CompileService.Syntaxes
                 _ => CompareOperation.LessThan,
             };
 
-            if (!AddExpr.Match(tokens, ref cursor, out var right))
+            if (!AddExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
                 return false;
 
-            Match(tokens, ref cursor, out var nextTail);
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new CompareTailExpr(right, operation, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

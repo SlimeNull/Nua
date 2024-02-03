@@ -24,15 +24,25 @@ namespace Nua.CompileService.Syntaxes
             return new NuaNumber(-number.Value);
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptMin, out _))
+            if (!TokenMatch(tokens, required, TokenKind.OptMin, ref cursor, out _, out _))
+            {
+                requireMoreTokens = false;
+                message = null;
                 return false;
-            if (!PrimaryExpr.Match(tokens, ref cursor, out var toInvert))
-                throw new NuaParseException("Expect 'primary-expression' after '-' while parsing 'invert-number-expression'");
+            }
+
+            if (!PrimaryExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var toInvert))
+            {
+                if (message == null)
+                    message = "Expect 'primary-expression' after '-' while parsing 'invert-number-expression'";
+
+                return false;
+            }
 
             index = cursor;
             expr = new InvertNumberExpr(toInvert);

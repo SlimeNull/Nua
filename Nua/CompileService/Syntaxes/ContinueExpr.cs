@@ -11,13 +11,12 @@ namespace Nua.CompileService.Syntaxes
             return null;
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
+            message = null;
 
-            if (index < 0 || index >= tokens.Count)
-                return false;
-            if (tokens[index].Kind != TokenKind.KwdContinue)
+            if (!TokenMatch(tokens, required, TokenKind.KwdContinue, ref index, out requireMoreTokens, out _))
                 return false;
 
             index++;

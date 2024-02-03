@@ -76,15 +76,18 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out AddTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out AddTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptAdd, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptMin, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptAdd, ref cursor, out requireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptMin, ref cursor, out requireMoreTokens, out operatorToken))
+            {
+                message = null;
                 return false;
+            }
 
             var operation = operatorToken.Kind switch
             {
@@ -93,13 +96,23 @@ namespace Nua.CompileService.Syntaxes
                 _ => AddOperation.Add
             };
 
-            if (!MulExpr.Match(tokens, ref cursor, out var right))
-                throw new NuaParseException("Expect 'mul-expression' after 'add' or 'min' token");
+            if (!MulExpr.Match(tokens, true, ref cursor, out _, out message, out var right))
+            {
+                requireMoreTokens = true;
+                return false;
+            }
 
-            Match(tokens, ref cursor, out var nextTail);
+            if (!Match(tokens, false, ref cursor, out bool tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new AddTailExpr(right, operation, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

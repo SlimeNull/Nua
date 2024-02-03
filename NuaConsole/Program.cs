@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using System.Text;
 using Nua;
+using Nua.CompileService;
 
 namespace NuaConsole
 {
@@ -28,9 +30,12 @@ namespace NuaConsole
             Console.WriteLine($"Nua V{version}");
             Console.WriteLine();
 
+            StringBuilder inputBuffer = new();
+
             while (true)
             {
-                Console.Write(">>> ");
+                string prompt = inputBuffer.Length == 0 ? ">>> " : "... ";
+                Console.Write(prompt);
                 string? input = Console.ReadLine();
 
                 if (input == null)
@@ -39,16 +44,34 @@ namespace NuaConsole
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
 
+                inputBuffer.AppendLine(input);
+
                 try
                 {
-                    var result = runtime.Evaluate(input);
+                    try
+                    {
+                        var result = runtime.Evaluate(inputBuffer.ToString());
 
-                    if (result != null)
-                        Console.WriteLine(result);
+                        if (result != null)
+                        {
+                            Console.WriteLine(result);
+                        }
+
+                        inputBuffer.Clear();
+                    }
+                    catch (NuaParseException parseException)
+                    {
+                        if (!parseException.RequireMoreTokens)
+                        {
+                            inputBuffer.Clear();
+                            throw parseException;
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
+                    inputBuffer.Clear();
                 }
             }
         }

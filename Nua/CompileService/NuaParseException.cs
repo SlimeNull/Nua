@@ -6,8 +6,11 @@
         {
         }
 
-        public NuaParseException(string? message) : base(message)
+        public NuaParseException(bool requireMoreTokens, string? message) : base(message)
         {
+            RequireMoreTokens = requireMoreTokens;
         }
+
+        public bool RequireMoreTokens { get; }
     }
 }

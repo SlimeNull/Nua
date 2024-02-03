@@ -12,10 +12,16 @@ namespace Nua.CompileService
         public static Expr Parse(IList<Token> tokens)
         {
             int cursor = 0;
-            if (!Expr.MatchAny(tokens, ref cursor, out var expr))
-                throw new ArgumentException("Invalid expression");
+            if (!Expr.MatchAny(tokens, true, ref cursor, out var requireMoreTokens, out var message, out var expr))
+            {
+                if (message == null)
+                    message = "Invalid expression";
+
+                throw new NuaParseException(requireMoreTokens, message);
+            }
+
             if (cursor < tokens.Count)
-                throw new ArgumentException($"Unexpected token '{tokens[cursor]}'");
+                throw new NuaParseException(false, $"Unexpected token '{tokens[cursor]}'");
 
             return expr;
         }
@@ -23,10 +29,15 @@ namespace Nua.CompileService
         public static MultiExpr ParseMulti(IList<Token> tokens)
         {
             int cursor = 0;
-            if (!MultiExpr.Match(tokens, ref cursor, out var expr))
-                throw new ArgumentException("Invalid expression");
+            if (!MultiExpr.Match(tokens, true, ref cursor, out var requireMoreTokens, out var message, out var expr))
+            {
+                if (message == null)
+                    message = "Invalid expression";
+
+                throw new NuaParseException(requireMoreTokens, message);
+            }
             if (cursor < tokens.Count)
-                throw new ArgumentException($"Unexpected token '{tokens[cursor]}'");
+                throw new NuaParseException(false, $"Unexpected token '{tokens[cursor]}'");
 
             return expr;
         }

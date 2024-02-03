@@ -70,28 +70,48 @@ namespace Nua.CompileService.Syntaxes
             return Evaluate(context, out _, out state);
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdIf, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdIf, ref cursor, out _, out _))
+            {
+                requireMoreTokens = false;
+                message = null;
                 return false;
+            }
 
-            if (!Expr.MatchAny(tokens, ref cursor, out var condition))
-                throw new NuaParseException("Require 'if' condition");
+            if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var condition))
+            {
+                if (message == null)
+                    message = "Require 'if' condition";
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
-                throw new NuaParseException("Require big left bracket after 'if' condition");
+                return false;
+            }
 
-            MultiExpr.Match(tokens, ref cursor, out var body);
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Require big left bracket after 'if' condition";
+                return false;
+            }
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
-                throw new NuaParseException("Require bit right bracket after 'if body' expressions");
+            if (!MultiExpr.Match(tokens, false, ref cursor, out var bodyRequireMoreTokens, out var bodyMessage, out var body) && bodyRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = bodyMessage;
+                return false;
+            }
+
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Require bit right bracket after 'if body' expressions";
+                return false;
+            }
 
             List<ElseIfExpr>? elseifs = null;
 
-            while (ElseIfExpr.Match(tokens, ref cursor, out var elseif))
+            while (ElseIfExpr.Match(tokens, false, ref cursor, out requireMoreTokens, out message, out var elseif))
             {
                 if (elseifs == null)
                     elseifs = new();
@@ -99,7 +119,15 @@ namespace Nua.CompileService.Syntaxes
                 elseifs.Add(elseif);
             }
 
-            ElseExpr.Match(tokens, ref cursor, out var elseExpr);
+            if (requireMoreTokens)
+                return false;
+
+            if (!ElseExpr.Match(tokens, false, ref cursor, out var elseRequireMoreTokens, out var elseMessage, out var elseExpr) && elseRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = elseMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new IfExpr(condition, body, elseifs, elseExpr);

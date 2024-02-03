@@ -6,16 +6,25 @@ namespace Nua.CompileService.Syntaxes
     {
         public abstract NuaValue? Evaluate(NuaContext context);
 
-        protected static bool TokenMatch(IList<Token> tokens, ref int index, TokenKind requiredTokenKind, out Token token)
+        protected static bool TokenMatch(IList<Token> tokens, bool required, TokenKind requiredTokenKind, ref int index, out bool requireToken, out Token token)
         {
             token = default;
             if (index < 0 || index >= tokens.Count)
+            {
+                requireToken = required;
                 return false;
+            }
+
             if (tokens[index].Kind != requiredTokenKind)
+            {
+                requireToken = false;
                 return false;
+            }
 
             token = tokens[index];
             index++;
+            requireToken = false;
+
             return true;
         }
     }

@@ -26,30 +26,41 @@ namespace Nua.CompileService.Syntaxes
             return table;
         }
 
-        public new static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
+            if (!TokenMatch(tokens, required, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            {
+                message = null;
                 return false;
+            }
 
             List<TableMemberExpr> members = new();
-            while (TableMemberExpr.Match(tokens, ref cursor, out var member))
+            while (TableMemberExpr.Match(tokens, false, ref cursor, out requireMoreTokens, out message, out var member))
             {
                 members.Add(member);
 
-                if (!TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _))
+                if (!TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
                     break;
             }
 
-            TokenMatch(tokens, ref cursor, TokenKind.OptComma, out _);
+            if (requireMoreTokens)
+                return false;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
-                throw new NuaParseException("Expect '}' after '{' while parsing 'table-expression'");
+            // skip the last comma
+            TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _);
+
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Expect '}' after '{' while parsing 'table-expression'";
+                return false;
+            }
 
             index = cursor;
             expr = new TableExpr(members);
+            message = null;
             return true;
         }
     }

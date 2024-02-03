@@ -20,24 +20,33 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => Value.Evaluate(context);
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out TableMemberExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out TableMemberExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Expr key;
-            if (TokenMatch(tokens, ref cursor, TokenKind.Identifier, out var idToken))
+            if (TokenMatch(tokens, required, TokenKind.Identifier, ref cursor, out _, out var idToken))
                 key = new ConstExpr(new NuaString(idToken.Value!));
-            else if (ConstExpr.Match(tokens, ref cursor, out var constKey))
+            else if (ConstExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var constKey))
                 key = constKey;
             else
                 return false;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptColon, out _))
-                throw new NuaParseException("Expect ':' after table member name while parsing 'table-expression'");
+            if (!TokenMatch(tokens, true, TokenKind.OptColon, ref cursor, out _, out _))
+            {
+                requireMoreTokens = true;
+                message = "Expect ':' after table member name while parsing 'table-expression'";
+                return false;
+            }
 
-            if (!Expr.MatchAny(tokens, ref cursor, out var value))
-                throw new NuaParseException("Expect expression after ':' while parsing 'table-expression'");
+            if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var value))
+            {
+                if (message == null)
+                    message = "Expect expression after ':' while parsing 'table-expression'";
+
+                return false;
+            }
 
             index = cursor;
             expr = new TableMemberExpr(key, value);

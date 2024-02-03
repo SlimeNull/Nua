@@ -72,14 +72,14 @@ namespace Nua.CompileService.Syntaxes
         public abstract NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess);
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
         {
             expr = null;
-            if (ValueIndexAccessTailExpr.Match(tokens, ref index, out var expr3))
+            if (ValueIndexAccessTailExpr.Match(tokens, required, ref index, out requireMoreTokens, out message, out var expr3))
                 expr = expr3;
-            else if (ValueInvokeAccessTailExpr.Match(tokens, ref index, out var expr2))
+            else if (ValueInvokeAccessTailExpr.Match(tokens, required, ref index, out requireMoreTokens, out message, out var expr2))
                 expr = expr2;
-            else if (ValueMemberAccessTailExpr.Match(tokens, ref index, out var expr1))
+            else if (ValueMemberAccessTailExpr.Match(tokens, required, ref index, out requireMoreTokens, out message, out var expr1))
                 expr = expr1;
             else
                 return false;

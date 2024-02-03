@@ -20,14 +20,19 @@ namespace Nua.CompileService.Syntaxes
             return Tail.Evaluate(context, Left);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out Expr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!MulExpr.Match(tokens, ref cursor, out var left))
+            if (!MulExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var left))
                 return false;
-            AddTailExpr.Match(tokens, ref cursor, out var tail);
+            if (!AddTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out string? tailMessage, out var tail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = tail != null ? new AddExpr(left, tail) : left;

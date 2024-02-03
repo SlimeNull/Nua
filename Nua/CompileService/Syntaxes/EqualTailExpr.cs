@@ -34,15 +34,19 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out EqualTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out EqualTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, ref cursor, TokenKind.OptEql, out operatorToken) &&
-                !TokenMatch(tokens, ref cursor, TokenKind.OptNeq, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptEql, ref cursor, out _, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptNeq, ref cursor, out _, out operatorToken))
+            {
+                requireMoreTokens = required;
+                message = null;
                 return false;
+            }
 
             EqualOperation operation = operatorToken.Kind switch
             {
@@ -51,13 +55,23 @@ namespace Nua.CompileService.Syntaxes
                 _ => EqualOperation.Equal,
             };
 
-            if (!CompareExpr.Match(tokens, ref cursor, out var right))
+            if (!CompareExpr.Match(tokens, true, ref cursor, out _, out message, out var right))
+            {
+                requireMoreTokens = true;
                 return false;
+            }
 
-            Match(tokens, ref cursor, out var nextTail);
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new EqualTailExpr(right, operation, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }

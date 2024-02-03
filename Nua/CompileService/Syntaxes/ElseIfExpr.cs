@@ -41,24 +41,39 @@ namespace Nua.CompileService.Syntaxes
             return Evaluate(context, out _, out state);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out ElseIfExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ElseIfExpr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdElif, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdElif, ref cursor, out requireMoreTokens, out _))
+            {
+                message = null;
+                return false;
+            }
+
+            if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var condition))
+            {
+                if (message == null)
+                    message = "Require 'elif' condition";
+
+                return false;
+            }
+
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Require big left bracket after 'elif' condition";
+                return false;
+            }
+
+            if (!MultiExpr.Match(tokens, false, ref cursor, out requireMoreTokens, out message, out var body) && requireMoreTokens)
                 return false;
 
-            if (!Expr.MatchAny(tokens, ref cursor, out var condition))
-                throw new NuaParseException("Require 'elif' condition");
-
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketLeft, out _))
-                throw new NuaParseException("Require big left bracket after 'elif' condition");
-
-            MultiExpr.Match(tokens, ref cursor, out var body);
-
-            if (!TokenMatch(tokens, ref cursor, TokenKind.BigBracketRight, out _))
-                throw new NuaParseException("Require big right bracket after 'elif' condition");
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            {
+                message = "Require big right bracket after 'elif' condition";
+                return false;
+            }
 
             index = cursor;
             expr = new ElseIfExpr(condition, body);

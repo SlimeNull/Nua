@@ -1,4 +1,5 @@
-﻿using Nua.CompileService;
+﻿using System.Text;
+using Nua.CompileService;
 using Nua.Stdlib;
 using Nua.Types;
 
@@ -23,6 +24,38 @@ namespace Nua
             };
 
             Context = new NuaContext(rootContext);
+        }
+
+        public NuaValue? Evaluate(TextReader expressionReader)
+        {
+            ArgumentNullException.ThrowIfNull(expressionReader, nameof(expressionReader));
+
+            StringBuilder sb = new();
+            sb.AppendLine(expressionReader.ReadLine());
+
+            while (true)
+            {
+                var reader = new StringReader(sb.ToString());
+                var tokens = Lexer.Lex(reader).ToArray();
+
+                try
+                {
+                    var expr = Parser.ParseMulti(tokens);
+
+                    return expr.Evaluate(Context);
+                }
+                catch (NuaParseException parseException)
+                {
+                    if (!parseException.RequireMoreTokens)
+                        throw parseException;
+                }
+
+                var newLine = expressionReader.ReadLine();
+                if (newLine == null)
+                    throw new IOException();
+
+                sb.AppendLine(newLine);
+            }
         }
 
         public NuaValue? Evaluate(string expression)

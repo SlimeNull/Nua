@@ -17,18 +17,33 @@ namespace Nua
 
         }
 
-        public void Set(string name, NuaValue? value)
+        bool Modify(string name, NuaValue? value)
         {
-            if (value == null)
+            if (Parent != null && Parent.Modify(name, value))
+                return true;
+
+            if (Values.ContainsKey(name))
             {
-                Values.Remove(name);
-                return;
+                if (value == null)
+                    Values.Remove(name);
+                else
+                    Values[name] = value;
+
+                return true;
             }
 
-            if (Parent != null)
-                Parent.Set(name, value);
-            else
-                Values[name] = value;
+            return false;
+        }
+
+        public void Set(string name, NuaValue? value)
+        {
+            if (!Modify(name, value))
+            {
+                if (value == null)
+                    Values.Remove(name);
+                else
+                    Values[name] = value;
+            }
         }
 
         public NuaValue? Get(string name)

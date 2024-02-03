@@ -41,20 +41,37 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(true);
         }
 
-        public static bool Match(IList<Token> tokens, ref int index, [NotNullWhen(true)] out OrTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out OrTailExpr? expr)
         {
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, ref cursor, TokenKind.KwdOr, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdOr, ref cursor, out _, out _))
+            {
+                requireMoreTokens = required;
+                message = null;
                 return false;
-            if (!AndExpr.Match(tokens, ref cursor, out var right))
-                throw new NuaParseException("Expect 'and-expression' after 'or' keyword");
+            }
 
-            Match(tokens, ref cursor, out var nextTail);
+            if (!AndExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
+            {
+                if (message == null)
+                    message = "Expect 'and-expression' after 'or' keyword";
+
+                return false;
+            }
+
+            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            {
+                requireMoreTokens = true;
+                message = tailMessage;
+                return false;
+            }
 
             index = cursor;
             expr = new OrTailExpr(right, nextTail);
+            requireMoreTokens = false;
+            message = null;
             return true;
         }
     }
