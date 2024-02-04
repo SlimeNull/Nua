@@ -14,12 +14,12 @@ namespace Nua.CompileService.Syntaxes
             ConstExpr.Match,
         };
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus.RequireMoreTokens = required;
             parseStatus.Message = null;
             parseStatus = new();
-expr = null;
+            expr = null;
 
             for (int i = 0; i < matchers.Length; i++)
             {

@@ -19,10 +19,10 @@ namespace Nua.CompileService.Syntaxes
             return Tail.Evaluate(context, Left);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!CompareExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))

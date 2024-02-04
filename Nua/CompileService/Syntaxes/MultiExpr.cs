@@ -51,7 +51,7 @@ expr = null;
             List<Expr> expressions = new();
 
             int cursor = index;
-            while (Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var oneExpr))
+            while (Expr.Match(tokens, required, ref cursor, out parseStatus, out var oneExpr))
                 expressions.Add(oneExpr);
 
             if (expressions.Count == 0)

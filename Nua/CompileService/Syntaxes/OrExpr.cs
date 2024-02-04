@@ -30,7 +30,7 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(true);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
 expr = null;

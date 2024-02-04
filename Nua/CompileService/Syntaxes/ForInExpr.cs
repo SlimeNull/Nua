@@ -6,22 +6,22 @@ namespace Nua.CompileService.Syntaxes
 
     public class ForInExpr : ForExpr
     {
-        public ForInExpr(string valueName, string? keyName, Expr iterable, MultiExpr body)
+        public ForInExpr(string valueName, string? keyName, Expr iterable, MultiExpr? body)
         {
             ValueName = valueName;
             KeyName = keyName;
-            Iterable = iterable;
-            Body = body;
+            IterableExpr = iterable;
+            BodyExpr = body;
         }
 
         public string ValueName { get; }
         public string? KeyName { get; }
-        public Expr Iterable { get; }
-        public MultiExpr Body { get; }
+        public Expr IterableExpr { get; }
+        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            var iterableValue = Iterable.Evaluate(context);
+            var iterableValue = IterableExpr.Evaluate(context);
             NuaValue? result = null;
 
             if (iterableValue is NuaTable table)
@@ -32,7 +32,8 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         context.Set(KeyName, kv.Key);
 
-                    result = Body.Evaluate(context, out var bodyState);
+                    EvalState bodyState = EvalState.None;
+                    result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -50,7 +51,8 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         context.Set(KeyName, new NuaNumber(i));
 
-                    result = Body.Evaluate(context, out var bodyState);
+                    EvalState bodyState = EvalState.None;
+                    result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -68,7 +70,8 @@ namespace Nua.CompileService.Syntaxes
                     if (KeyName != null)
                         context.Set(KeyName, new NuaNumber(i));
 
-                    result = Body.Evaluate(context, out var bodyState);
+                    EvalState bodyState = EvalState.None;
+                    result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;

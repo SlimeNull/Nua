@@ -79,7 +79,7 @@ expr = null;
 
             if (operation == ForOperation.In)
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var iterable))
+                if (!Expr.Match(tokens, true, ref cursor, out parseStatus, out var iterable))
                 {
                     parseStatus.Intercept = true;
                     parseStatus.Message = "Require iterable expression after 'in' keyword of 'for' expression";

@@ -38,10 +38,9 @@ namespace Nua
 
                     return expr.Evaluate(Context);
                 }
-                catch (NuaParseException parseException)
+                catch (NuaParseException parseException) when (parseException.Status.RequireMoreTokens)
                 {
-                    if (!parseException.Status.RequireMoreTokens)
-                        throw parseException;
+                    // do nothing
                 }
 
                 var newLine = expressionReader.ReadLine();

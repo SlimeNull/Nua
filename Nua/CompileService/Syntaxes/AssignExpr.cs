@@ -16,30 +16,13 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            if (Left is ValueAccessExpr valueAccessExpr)
-            {
-                var value = Tail.Evaluate(context);
-                valueAccessExpr.SetMemberValue(context, value);
-
-                return value;
-            }
-            else if (Left is VariableExpr variableExpr)
-            {
-                var value = Tail.Evaluate(context);
-                variableExpr.SetValue(context, value);
-
-                return value;
-            }
-            else
-            {
-                throw new NuaEvalException("Only Value member or Variable can be assigned");
-            }
+            return Tail.Evaluate(context, Left);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!PrimaryExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))

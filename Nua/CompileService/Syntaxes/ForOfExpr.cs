@@ -4,31 +4,31 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ForOfExpr : ForExpr
     {
-        public ForOfExpr(string valueName, Expr start, Expr end, Expr? step, MultiExpr body)
+        public ForOfExpr(string valueName, Expr start, Expr end, Expr? step, MultiExpr? body)
         {
             ValueName = valueName;
-            Start = start;
-            End = end;
-            Step = step;
-            Body = body;
+            StartExpr = start;
+            EndExpr = end;
+            StepExpr = step;
+            BodyExpr = body;
         }
 
         public string ValueName { get; }
-        public Expr Start { get; }
-        public Expr End { get; }
-        public Expr? Step { get; }
-        public MultiExpr Body { get; }
+        public Expr StartExpr { get; }
+        public Expr EndExpr { get; }
+        public Expr? StepExpr { get; }
+        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            var start = Start.Evaluate(context);
+            var start = StartExpr.Evaluate(context);
 
             if (start == null)
                 throw new NuaEvalException("Start value of 'for-of' statement is null");
             if (start is not NuaNumber startNumber)
                 throw new NuaEvalException("Start value of 'for-of' statement not number");
 
-            var end = End.Evaluate(context);
+            var end = EndExpr.Evaluate(context);
 
             if (end == null)
                 throw new NuaEvalException("End value of 'for-of' statement is null");
@@ -36,9 +36,9 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaEvalException("End value of 'for-of' statement not number");
 
             NuaNumber? stepNumber = null;
-            var step = Step?.Evaluate(context) as NuaNumber;
+            var step = StepExpr?.Evaluate(context) as NuaNumber;
 
-            if (Step != null && stepNumber == null)
+            if (StepExpr != null && stepNumber == null)
                 throw new NuaEvalException("Step value of 'for-of' statement not number");
 
             double startValue = startNumber.Value;
@@ -53,7 +53,8 @@ namespace Nua.CompileService.Syntaxes
                 {
                     context.Set(ValueName, new NuaNumber(value));
 
-                    result = Body.Evaluate(context, out var bodyState);
+                    EvalState bodyState = EvalState.None;
+                    result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -68,7 +69,8 @@ namespace Nua.CompileService.Syntaxes
                 {
                     context.Set(ValueName, new NuaNumber(value));
 
-                    result = Body.Evaluate(context, out var bodyState);
+                    EvalState bodyState = EvalState.None;
+                    result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;

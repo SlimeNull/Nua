@@ -41,7 +41,7 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var value))
+            if (!Expr.Match(tokens, true, ref cursor, out parseStatus, out var value))
             {
                 if (parseStatus.Message == null)
                     parseStatus.Message = "Expect expression after ':' while parsing 'table-expression'";

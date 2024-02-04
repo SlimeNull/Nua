@@ -31,14 +31,14 @@ expr = null;
 
             List<Expr> expressions = new();
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var firstExpr))
+            if (!Expr.Match(tokens, required, ref cursor, out parseStatus, out var firstExpr))
                 return false;
 
             expressions.Add(firstExpr);
 
             while (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var nextExpr))
+                if (!Expr.Match(tokens, true, ref cursor, out parseStatus, out var nextExpr))
                 {
                     if (parseStatus.Message == null)
                         parseStatus.Message = "Expect expression after ',' while parsing 'chain-expression'";

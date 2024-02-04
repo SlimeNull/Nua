@@ -33,7 +33,7 @@ expr = null;
             Expr? value = null;
             if (TokenMatch(tokens, false, TokenKind.OptColon, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out value))
+                if (!Expr.Match(tokens, true, ref cursor, out parseStatus, out value))
                 {
                     if (parseStatus.Message == null)
                         parseStatus.Message = "Require expression after ':' while parsing 'return-expression'";

@@ -54,7 +54,7 @@ expr = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var condition))
+            if (!Expr.Match(tokens, true, ref cursor, out parseStatus, out var condition))
             {
                 parseStatus.Intercept = true;
                 if (parseStatus.Message == null)

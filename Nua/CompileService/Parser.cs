@@ -12,7 +12,7 @@ namespace Nua.CompileService
         public static Expr Parse(IList<Token> tokens)
         {
             int cursor = 0;
-            if (!Expr.MatchAny(tokens, true, ref cursor, out var parseStatus, out var expr))
+            if (!Expr.Match(tokens, true, ref cursor, out var parseStatus, out var expr))
             {
                 if (parseStatus.Message == null)
                     parseStatus.Message = "Invalid expression";

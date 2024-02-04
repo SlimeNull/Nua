@@ -12,7 +12,7 @@ namespace Nua.CompileService.Syntaxes
             OrExpr.Match,
         };
 
-        public static bool MatchAny(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus.RequireMoreTokens = required;
             parseStatus.Message = null;

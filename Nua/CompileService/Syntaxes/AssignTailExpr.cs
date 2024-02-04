@@ -16,24 +16,31 @@ namespace Nua.CompileService.Syntaxes
         public AssignOperation Operation { get; }
         public AssignTailExpr? NextTail { get; }
 
-        public override NuaValue? Evaluate(NuaContext context)
+        public NuaValue? Evaluate(NuaContext context, Expr left)
         {
+            NuaValue? toAssign = null;
             if (NextTail == null)
-                return Right.Evaluate(context);
+                toAssign = Right.Evaluate(context);
+            else
+                toAssign = NextTail.Evaluate(context, Right);
 
-            if (Right is ValueAccessExpr valueAccessExpr)
+            var newValue = Operation switch
             {
-                var value = NextTail.Evaluate(context);
-                valueAccessExpr.SetMemberValue(context, value);
+                AssignOperation.AddWith =>  EvalUtilities.EvalPlus(left.Evaluate(context), toAssign),
+                AssignOperation.MinWith =>  EvalUtilities.EvalMinus(left.Evaluate(context), toAssign),
+                AssignOperation.Assign => toAssign,
+                _ => toAssign,
+            };
 
-                return value;
+            if (left is ValueAccessExpr valueAccessExpr)
+            {
+                valueAccessExpr.SetMemberValue(context, newValue);
+                return newValue;
             }
-            else if (Right is VariableExpr variableExpr)
+            else if (left is VariableExpr variableExpr)
             {
-                var value = NextTail.Evaluate(context);
-                variableExpr.SetValue(context, value);
-
-                return value;
+                variableExpr.SetValue(context, newValue);
+                return newValue;
             }
             else
             {
@@ -41,10 +48,15 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
+        public override NuaValue? Evaluate(NuaContext context)
+        {
+            throw new InvalidOperationException();
+        }
+
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             Token operatorToken;

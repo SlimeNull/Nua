@@ -41,16 +41,29 @@ namespace Nua.CompileService.Syntaxes
             return new NuaNumber(result);
         }
 
+        public NuaValue? Evaluate(NuaContext context, NuaValue? left)
+        {
+            var rightValue = Right.Evaluate(context);
+
+            NuaValue? result = Operation switch
+            {
+                MulOperation.Mul => EvalUtilities.EvalMultiply(left, rightValue),
+                MulOperation.Div => EvalUtilities.EvalDivide(left, rightValue),
+                MulOperation.Pow => EvalUtilities.EvalPower(left, rightValue),
+                MulOperation.Mod => EvalUtilities.EvalMod(left, rightValue),
+                MulOperation.DivInt => EvalUtilities.EvalDivideInt(left, rightValue),
+                _ => EvalUtilities.EvalMultiply(left, rightValue),
+            };
+
+            if (NextTail is not null)
+                result = NextTail.Evaluate(context, result);
+
+            return result;
+        }
+
         public NuaValue? Evaluate(NuaContext context, Expr left)
         {
-            var leftValue = left.Evaluate(context);
-
-            if (leftValue == null)
-                throw new NuaEvalException("Unable to plus on a null value");
-            if (leftValue is not NuaNumber leftNumber)
-                throw new NuaEvalException("Unable to plus on a non-number value");
-
-            return Evaluate(context, leftNumber.Value);
+            return Evaluate(context, left.Evaluate(context));
         }
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
@@ -58,7 +71,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             Token operatorToken;

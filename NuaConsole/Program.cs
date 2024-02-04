@@ -52,11 +52,7 @@ namespace NuaConsole
                     {
                         var result = runtime.Evaluate(inputBuffer.ToString());
 
-                        if (result != null)
-                        {
-                            Console.WriteLine(result);
-                        }
-
+                        Console.WriteLine(result);
                         inputBuffer.Clear();
                     }
                     catch (NuaParseException parseException)

@@ -75,7 +75,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
@@ -84,7 +84,7 @@ expr = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var indexExpr))
+            if (!Expr.Match(tokens, required, ref cursor, out parseStatus, out var indexExpr))
             {
                 parseStatus.Intercept = true;
                 if (parseStatus.Message == null)

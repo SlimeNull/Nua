@@ -27,7 +27,7 @@ expr = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var content))
+            if (!Expr.Match(tokens, required, ref cursor, out parseStatus, out var content))
             {
                 if (parseStatus.Message == null)
                     parseStatus.Message = ("Expect expression after '(' token while parsing 'quote-expressoin'");
