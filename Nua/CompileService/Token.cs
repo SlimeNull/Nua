@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 
 namespace Nua.CompileService
 {
-    public record struct Token(TokenKind Kind, string? Value, int Ln, int Col);
+    public record struct Token(TokenKind Kind, string? Value, int StartIndex, int EndIndex, int Ln, int Col);
 }

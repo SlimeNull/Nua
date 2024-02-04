@@ -14,11 +14,36 @@ namespace Nua.CompileService
         {
             int ln = 0;
             int col = 0;
+            int index = 0;
+
+            int ReadAndRise()
+            {
+                int result = reader.Read();
+
+                col++;
+                index++;
+
+                if (result == '\r')
+                {
+                    var next = reader.Peek();
+                    if (next == '\n')
+                        reader.Read();
+
+                    col = 0;
+                    ln++;
+                }
+                else if (result == '\n')
+                {
+                    col = 0;
+                    ln++;
+                }
+
+                return result;
+            }
 
             while (true)
             {
-                col++;
-                var ch = reader.Read();
+                var ch = ReadAndRise();
                 char cch = (char)ch;
 
                 if (ch == -1)
@@ -26,28 +51,13 @@ namespace Nua.CompileService
 
                 if (char.IsWhiteSpace(cch))
                 {
-                    if (cch == '\r')
-                    {
-                        var next = reader.Peek();
-                        if (next == '\n')
-                            reader.Read();
-
-                        col = 0;
-                        ln++;
-                    }
-                    else if (ch == '\n')
-                    {
-                        col = 0;
-                        ln++;
-                    }
-
-
                     continue;
                 }
                 else if (char.IsLetter(cch) || cch == '_')
                 {
                     int tokenLn = ln;
                     int tokenCol = col - 1;
+                    int startIndex = index - 1;
 
                     StringBuilder sb = new StringBuilder();
                     sb.Append(cch);
@@ -59,8 +69,7 @@ namespace Nua.CompileService
 
                         if (char.IsLetterOrDigit(cch) || cch == '_')
                         {
-                            col++;
-                            reader.Read();
+                            ReadAndRise();
                             sb.Append(cch);
                         }
                         else
@@ -102,9 +111,9 @@ namespace Nua.CompileService
                     };
 
                     if (kwdToken is TokenKind kwd)
-                        yield return new Token(kwd, null, tokenLn, tokenCol);
+                        yield return new Token(kwd, null, startIndex, index, tokenLn, tokenCol);
                     else
-                        yield return new Token(TokenKind.Identifier, sb.ToString(), tokenLn, tokenCol);
+                        yield return new Token(TokenKind.Identifier, sb.ToString(), startIndex, index, tokenLn, tokenCol);
 
                     continue;
                 }
@@ -112,6 +121,7 @@ namespace Nua.CompileService
                 {
                     int tokenLn = ln;
                     int tokenCol = col - 1;
+                    int startIndex = index - 1;
 
                     StringBuilder sb = new StringBuilder();
                     sb.Append(cch);
@@ -122,8 +132,7 @@ namespace Nua.CompileService
                         cch = (char)ch;
                         if (ch >= '0' && ch <= '9')
                         {
-                            col++;
-                            reader.Read();
+                            ReadAndRise();
                             sb.Append(cch);
                         }
                         else
@@ -134,8 +143,7 @@ namespace Nua.CompileService
 
                     if (cch == '.')
                     {
-                        col++;
-                        ch = reader.Read();  // skip '.'
+                        ch = ReadAndRise();  // skip '.'
                         sb.Append(cch);
                         while (ch != -1)
                         {
@@ -143,8 +151,7 @@ namespace Nua.CompileService
                             cch = (char)ch;
                             if (ch >= '0' && ch <= '9')
                             {
-                                col++;
-                                reader.Read();
+                                ReadAndRise();
                                 sb.Append(cch);
                             }
                             else
@@ -156,16 +163,13 @@ namespace Nua.CompileService
 
                     if (cch == 'e' || cch == 'E')
                     {
-                        col++;
-                        reader.Read();  // skip 'e'
+                        ReadAndRise();  // skip 'e'
                         sb.Append(cch);
 
-                        col++;
-                        ch = reader.Read();
+                        ch = ReadAndRise();
                         if (ch >= '0' || ch <= '9' || ch == '+' || ch == '-')
                         {
-                            col++;
-                            reader.Read();
+                            ReadAndRise();
                             sb.Append((char)ch);
                         }
 
@@ -175,8 +179,7 @@ namespace Nua.CompileService
                             cch = (char)ch;
                             if (ch >= '0' && ch <= '9')
                             {
-                                col++;
-                                reader.Read();
+                                ReadAndRise();
                                 sb.Append(cch);
                             }
                             else
@@ -186,20 +189,20 @@ namespace Nua.CompileService
                         }
                     }
 
-                    yield return new Token(TokenKind.Number, sb.ToString(), tokenLn, tokenCol);
+                    yield return new Token(TokenKind.Number, sb.ToString(), startIndex, index, tokenLn, tokenCol);
                     continue;
                 }
                 else if (cch == '"')
                 {
                     int tokenLn = ln;
                     int tokenCol = col - 1;
+                    int startIndex = index - 1;
 
                     StringBuilder sb = new();
 
                     while (true)
                     {
-                        col++;
-                        var nextCh = reader.Read();
+                        var nextCh = ReadAndRise();
 
                         if (nextCh is -1 or '\r' or '\n')
                             throw new NuaLexException("String not closed");
@@ -207,8 +210,7 @@ namespace Nua.CompileService
                         var nextCch = (char)nextCh;
                         if (nextCch == '\\')
                         {
-                            col++;
-                            var escapeSeq = reader.Read();
+                            var escapeSeq = ReadAndRise();
 
                             if (escapeSeq == -1)
                                 throw new NuaLexException("String not closed");
@@ -232,7 +234,7 @@ namespace Nua.CompileService
                         }
                     }
 
-                    yield return new Token(TokenKind.String, sb.ToString(), tokenLn, tokenCol);
+                    yield return new Token(TokenKind.String, sb.ToString(), startIndex, index, tokenLn, tokenCol);
                 }
                 else if (cch == '#')
                 {
@@ -243,153 +245,143 @@ namespace Nua.CompileService
                         if (nextCh is '\r' or '\n' or -1)
                             break;
 
-                        col++;
-                        reader.Read();
+                        ReadAndRise();
                     }
                 }
                 else
                 {
                     int tokenLn = ln;
                     int tokenCol = col - 1;
+                    int startIndex = index - 1;
 
                     switch (ch)
                     {
                         case '+':
                             if (reader.Peek() == '+')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptDoubleAdd, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptDoubleAdd, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptAddWith, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptAddWith, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptAdd, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptAdd, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '-':
                             if (reader.Peek() == '-')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptDoubleMin, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptDoubleMin, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptMinWith, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptMinWith, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptMin, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptMin, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '*':
                             if (reader.Peek() == '*')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptPow, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptPow, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptMul, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptMul, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '/':
                             if (reader.Peek() == '/')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptDivInt, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptDivInt, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptDiv, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptDiv, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '%':
-                            yield return new Token(TokenKind.OptMod, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.OptMod, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '(':
-                            yield return new Token(TokenKind.ParenthesesLeft, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.ParenthesesLeft, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case ')':
-                            yield return new Token(TokenKind.ParenthesesRight, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.ParenthesesRight, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '[':
-                            yield return new Token(TokenKind.SquareBracketLeft, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.SquareBracketLeft, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case ']':
-                            yield return new Token(TokenKind.SquareBracketRight, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.SquareBracketRight, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '{':
-                            yield return new Token(TokenKind.BigBracketLeft, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.BigBracketLeft, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '}':
-                            yield return new Token(TokenKind.BigBracketRight, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.BigBracketRight, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case ':':
-                            yield return new Token(TokenKind.OptColon, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.OptColon, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case ',':
-                            yield return new Token(TokenKind.OptComma, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.OptComma, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '.':
-                            yield return new Token(TokenKind.OptDot, null, tokenLn, tokenCol);
+                            yield return new Token(TokenKind.OptDot, null, startIndex, index, tokenLn, tokenCol);
                             break;
                         case '>':
                             if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptGeq, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptGeq, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptGtr, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptGtr, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '<':
                             if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptLeq, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptLeq, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptLss, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptLss, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '!':
                             if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptNeq, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptNeq, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.KwdNot, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.KwdNot, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
                         case '=':
                             if (reader.Peek() == '=')
                             {
-                                col++;
-                                reader.Read();
-                                yield return new Token(TokenKind.OptEql, null, tokenLn, tokenCol);
+                                ReadAndRise();
+                                yield return new Token(TokenKind.OptEql, null, startIndex, index, tokenLn, tokenCol);
                             }
                             else
                             {
-                                yield return new Token(TokenKind.OptAssign, null, tokenLn, tokenCol);
+                                yield return new Token(TokenKind.OptAssign, null, startIndex, index, tokenLn, tokenCol);
                             }
                             break;
 
