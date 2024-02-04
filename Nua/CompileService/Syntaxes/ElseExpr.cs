@@ -23,33 +23,37 @@ namespace Nua.CompileService.Syntaxes
             return Body.Evaluate(context, out state);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ElseExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.KwdElse, ref cursor, out _, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdElse, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.Intercept = required;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require '{' after 'else' keyword while parsing 'else-expression'";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '{' after 'else' keyword while parsing 'else-expression'";
                 return false;
             }
 
-            if (!MultiExpr.Match(tokens, false, ref cursor, out requireMoreTokens, out message, out var body) && requireMoreTokens)
+            if (!MultiExpr.Match(tokens, false, ref cursor, out parseStatus, out var body) && parseStatus.Intercept)
                 return false;
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
+                parseStatus.Intercept = true;
+
                 if (body != null)
-                    message = "Require '}' after '{' while parsing 'else-expression'";
+                    parseStatus.Message = "Require '}' after '{' while parsing 'else-expression'";
                 else
-                    message = "Require body expressions after '{' while parsing 'else-expression'";
+                    parseStatus.Message = "Require body expressions after '{' while parsing 'else-expression'";
 
                 return false;
             }

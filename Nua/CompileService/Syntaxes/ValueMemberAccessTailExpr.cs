@@ -34,36 +34,36 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.OptDot, ref cursor, out _, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.Identifier, ref cursor, out requireMoreTokens, out var idToken))
+            if (!TokenMatch(tokens, true, TokenKind.Identifier, ref cursor, out parseStatus.RequireMoreTokens, out var idToken))
             {
-                message = "Require identifier after '.' while parsing 'value-access-expression'";
+                parseStatus.Message = "Require identifier after '.' while parsing 'value-access-expression'";
                 return false;
             }
 
             string name = idToken.Value!;
 
-            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             expr = new ValueMemberAccessTailExpr(name, nextTail);
             index = cursor;
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
     }

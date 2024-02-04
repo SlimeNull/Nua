@@ -20,11 +20,12 @@ namespace Nua.CompileService.Syntaxes
             context.Set(Name, newValue);
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
-            requireMoreTokens = required;
-            message = null;
+            parseStatus = new();
+expr = null;
+            parseStatus.RequireMoreTokens = required;
+            parseStatus.Message = null;
 
 
             if (!TokenMatch(tokens, required, TokenKind.Identifier, ref index, out _, out var idToken))

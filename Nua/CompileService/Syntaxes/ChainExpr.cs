@@ -23,24 +23,25 @@ namespace Nua.CompileService.Syntaxes
             return value;
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ChainExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ChainExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             List<Expr> expressions = new();
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out requireMoreTokens, out message, out var firstExpr))
+            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var firstExpr))
                 return false;
 
             expressions.Add(firstExpr);
 
             while (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var nextExpr))
+                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var nextExpr))
                 {
-                    if (message == null)
-                        message = "Expect expression after ',' while parsing 'chain-expression'";
+                    if (parseStatus.Message == null)
+                        parseStatus.Message = "Expect expression after ',' while parsing 'chain-expression'";
 
                     return false;
                 }

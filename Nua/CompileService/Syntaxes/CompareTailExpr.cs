@@ -42,18 +42,19 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out CompareTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, required, TokenKind.OptLss, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptGtr, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptLeq, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptGeq, ref cursor, out requireMoreTokens, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptLss, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptGtr, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptLeq, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptGeq, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
             {
-                message = null;
+                parseStatus.Message = null;
                 return false;
             }
 
@@ -66,20 +67,19 @@ namespace Nua.CompileService.Syntaxes
                 _ => CompareOperation.LessThan,
             };
 
-            if (!AddExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
+            if (!AddExpr.Match(tokens, true, ref cursor, out parseStatus, out var right))
                 return false;
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new CompareTailExpr(right, operation, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

@@ -21,37 +21,37 @@ namespace Nua.CompileService.Syntaxes
             return list;
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = null;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!ChainExpr.Match(tokens, false, ref cursor, out var chainRequireMoreTokens, out var chainMessage, out var chain) && chainRequireMoreTokens)
+            if (!ChainExpr.Match(tokens, false, ref cursor, out var chainParseStatus, out var chain) && chainParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = chainMessage;
+                parseStatus = chainParseStatus;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.SquareBracketRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.SquareBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
                 if (chain != null)
-                    message = "Expect ']' after '[' while parsing 'list-expression'";
+                    parseStatus.Message = "Expect ']' after '[' while parsing 'list-expression'";
                 else
-                    message = "Expect expression after '[' while parsing 'list-expression'";
+                    parseStatus.Message = "Expect expression after '[' while parsing 'list-expression'";
 
                 return false;
             }
 
             index = cursor;
             expr = new ListExpr(chain?.Expressions ?? []);
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
 

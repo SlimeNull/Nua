@@ -41,9 +41,10 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out AssignTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             Token operatorToken;
@@ -51,8 +52,8 @@ namespace Nua.CompileService.Syntaxes
                 !TokenMatch(tokens, required, TokenKind.OptAddWith, ref cursor, out _, out operatorToken) &&
                 !TokenMatch(tokens, required, TokenKind.OptMinWith, ref cursor, out _, out operatorToken))
             {
-                requireMoreTokens = required;
-                message = null;
+                parseStatus.RequireMoreTokens = required;
+                parseStatus.Message = null;
                 return false;
             }
 
@@ -64,25 +65,24 @@ namespace Nua.CompileService.Syntaxes
                 _ => default
             };
 
-            if (!OrExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var right))
+            if (!OrExpr.Match(tokens, required, ref cursor, out parseStatus, out var right))
             {
-                if (message == null)
-                    message = "Require expression after '=' token while parsing 'assign-tail-expression'";
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Require expression after '=' token while parsing 'assign-tail-expression'";
 
                 return false;
             }
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new AssignTailExpr(right, operation, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

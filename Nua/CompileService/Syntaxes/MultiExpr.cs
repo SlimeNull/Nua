@@ -44,13 +44,14 @@ namespace Nua.CompileService.Syntaxes
             return Evaluate(context, out _);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out MultiExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MultiExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             List<Expr> expressions = new();
 
             int cursor = index;
-            while (Expr.MatchAny(tokens, required, ref cursor, out requireMoreTokens, out message, out var oneExpr))
+            while (Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var oneExpr))
                 expressions.Add(oneExpr);
 
             if (expressions.Count == 0)

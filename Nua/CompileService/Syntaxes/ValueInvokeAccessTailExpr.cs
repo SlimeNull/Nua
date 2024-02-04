@@ -34,45 +34,44 @@ namespace Nua.CompileService.Syntaxes
             return result;
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!ChainExpr.Match(tokens, true, ref cursor, out var chainRequireMoreTokens, out var chainMessage, out var chain) && chainRequireMoreTokens)
+            if (!ChainExpr.Match(tokens, true, ref cursor, out var chainParseStatus, out var chain) && chainParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = chainMessage;
+                parseStatus = chainParseStatus;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
                 if (chain != null)
-                    message = "Require ')' after '(' while parsing 'value-access-expression'";
+                    parseStatus.Message = "Require ')' after '(' while parsing 'value-access-expression'";
                 else
-                    message = "Require parameter names after '(' while parsing 'value-access-expression'";
+                    parseStatus.Message = "Require parameter names after '(' while parsing 'value-access-expression'";
 
                 return false;
             }
 
-            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new ValueInvokeAccessTailExpr(chain?.Expressions ?? [], nextTail);
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
     }

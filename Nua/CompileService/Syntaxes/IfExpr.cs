@@ -22,8 +22,6 @@ namespace Nua.CompileService.Syntaxes
         {
             bool condition = NuaUtilities.ConditionTest(Condition.Evaluate(context));
 
-            NuaContext ifContext = new NuaContext(context);
-
             if (condition)
             {
                 executed = true;
@@ -34,7 +32,7 @@ namespace Nua.CompileService.Syntaxes
                     return null;
                 }
 
-                return Body.Evaluate(ifContext, out state);
+                return Body.Evaluate(context, out state);
             }
             else
             {
@@ -42,7 +40,7 @@ namespace Nua.CompileService.Syntaxes
                 {
                     foreach (var elseif in ElseIfExpressions)
                     {
-                        var value = elseif.Evaluate(ifContext, out var elseIfExecuted, out var elseIfState);
+                        var value = elseif.Evaluate(context, out var elseIfExecuted, out var elseIfState);
 
                         if (elseIfExecuted)
                         {
@@ -56,7 +54,7 @@ namespace Nua.CompileService.Syntaxes
                 if (ElseExpressions != null)
                 {
                     executed = true;
-                    return ElseExpressions.Evaluate(ifContext, out state);
+                    return ElseExpressions.Evaluate(context, out state);
                 }
 
                 executed = false;
@@ -70,48 +68,51 @@ namespace Nua.CompileService.Syntaxes
             return Evaluate(context, out _, out state);
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
+            parseStatus = new();
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.KwdIf, ref cursor, out _, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdIf, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.Intercept = required;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var condition))
+            if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var condition))
             {
-                if (message == null)
-                    message = "Require 'if' condition";
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Require 'if' condition";
 
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require big left bracket after 'if' condition";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '{' after 'if' condition";
                 return false;
             }
 
-            if (!MultiExpr.Match(tokens, false, ref cursor, out var bodyRequireMoreTokens, out var bodyMessage, out var body) && bodyRequireMoreTokens)
+            if (!MultiExpr.Match(tokens, false, ref cursor, out var bodyParseStatus, out var body) && bodyParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = bodyMessage;
+                parseStatus = bodyParseStatus;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require bit right bracket after 'if body' expressions";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '}' after 'if body' expressions";
                 return false;
             }
 
             List<ElseIfExpr>? elseifs = null;
 
-            while (ElseIfExpr.Match(tokens, false, ref cursor, out requireMoreTokens, out message, out var elseif))
+            while (ElseIfExpr.Match(tokens, false, ref cursor, out parseStatus, out var elseif))
             {
                 if (elseifs == null)
                     elseifs = new();
@@ -119,13 +120,12 @@ namespace Nua.CompileService.Syntaxes
                 elseifs.Add(elseif);
             }
 
-            if (requireMoreTokens)
+            if (parseStatus.Intercept)
                 return false;
 
-            if (!ElseExpr.Match(tokens, false, ref cursor, out var elseRequireMoreTokens, out var elseMessage, out var elseExpr) && elseRequireMoreTokens)
+            if (!ElseExpr.Match(tokens, false, ref cursor, out var elseParseStatus, out var elseExpr) && elseParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = elseMessage;
+                parseStatus = elseParseStatus;
                 return false;
             }
 

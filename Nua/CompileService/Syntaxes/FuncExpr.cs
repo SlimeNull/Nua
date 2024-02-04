@@ -17,20 +17,22 @@ namespace Nua.CompileService.Syntaxes
         public override NuaValue? Evaluate(NuaContext context)
             => new NuaNativeFunction(Body, ParameterNames.ToArray());
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
+            parseStatus = new();
             expr = null;
             int cursor = index;
-            if (!TokenMatch(tokens, required, TokenKind.KwdFunction, ref cursor, out _, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdFunction, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.Intercept = required;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.ParenthesesLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.ParenthesesLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require '(' after 'function' keyword while parsing function";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '(' after 'function' keyword while parsing function";
                 return false;
             }
 
@@ -41,9 +43,10 @@ namespace Nua.CompileService.Syntaxes
 
                 while (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
                 {
-                    if (!TokenMatch(tokens, true, TokenKind.Identifier, ref cursor, out requireMoreTokens, out var anotherParameterName))
+                    if (!TokenMatch(tokens, true, TokenKind.Identifier, ref cursor, out parseStatus.RequireMoreTokens, out var anotherParameterName))
                     {
-                        message = "Require parameter name after ',' token while parsing function";
+                        parseStatus.Intercept = true;
+                        parseStatus.Message = "Require parameter name after ',' token while parsing function";
                         return false;
                     }
 
@@ -51,38 +54,40 @@ namespace Nua.CompileService.Syntaxes
                 }
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
+                parseStatus.Intercept = true;
                 if (parameterNames.Count != 0)
-                    message = "Require ')' after parameters while parsing function";
+                    parseStatus.Message = "Require ')' after parameters while parsing function";
                 else
-                    message = "Require parameters after '(' token while parsing function";
+                    parseStatus.Message = "Require parameters after '(' token while parsing function";
 
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require '{' after ')' while parsing function";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '{' after ')' while parsing function";
                 return false;
             }
 
-            if (!MultiExpr.Match(tokens, false, ref cursor, out var bodyRequireMoreTokens, out var bodyMessage, out var body) && bodyRequireMoreTokens)
+            if (!MultiExpr.Match(tokens, false, ref cursor, out var bodyParseStatus, out var body) && bodyParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = bodyMessage;
+                parseStatus = bodyParseStatus;
                 return false;
             }
 
-            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require '}' after function body while parsing function";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require '}' after function body while parsing function";
                 return false;
             }
 
             index = cursor;
             expr = new FuncExpr(parameterNames, body);
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
     }

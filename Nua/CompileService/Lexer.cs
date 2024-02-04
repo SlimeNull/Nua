@@ -96,6 +96,8 @@ namespace Nua.CompileService
                         "func" => TokenKind.KwdFunction,
                         "return" => TokenKind.KwdReturn,
 
+                        "global" => TokenKind.KwdGlobal,
+
                         _ => null
                     };
 

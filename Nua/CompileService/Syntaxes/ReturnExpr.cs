@@ -18,24 +18,25 @@ namespace Nua.CompileService.Syntaxes
             return Value?.Evaluate(context);
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.KwdReturn, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdReturn, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = null;
+                parseStatus.Message = null;
                 return false;
             }
 
             Expr? value = null;
-            if (TokenMatch(tokens, false, TokenKind.OptColon, ref cursor, out requireMoreTokens, out _))
+            if (TokenMatch(tokens, false, TokenKind.OptColon, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out value))
+                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out value))
                 {
-                    if (message == null)
-                        message = "Require expression after ':' while parsing 'return-expression'";
+                    if (parseStatus.Message == null)
+                        parseStatus.Message = "Require expression after ':' while parsing 'return-expression'";
 
                     return false;
                 }
@@ -43,7 +44,7 @@ namespace Nua.CompileService.Syntaxes
 
             index = cursor;
             expr = new ReturnExpr(value);
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
     }

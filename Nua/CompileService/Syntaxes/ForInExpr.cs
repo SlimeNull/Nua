@@ -21,8 +21,6 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            NuaContext forContext = new(context);
-
             var iterableValue = Iterable.Evaluate(context);
             NuaValue? result = null;
 
@@ -30,14 +28,11 @@ namespace Nua.CompileService.Syntaxes
             {
                 foreach (var kv in table)
                 {
-                    forContext.Values.Clear();
-
-                    if (kv.Value != null)
-                        forContext.Values[ValueName] = kv.Value;
+                    context.Set(ValueName, kv.Value);
                     if (KeyName != null)
-                        forContext.Values[KeyName] = kv.Key;
+                        context.Set(KeyName, kv.Key);
 
-                    result = Body.Evaluate(forContext, out var bodyState);
+                    result = Body.Evaluate(context, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -50,14 +45,12 @@ namespace Nua.CompileService.Syntaxes
                 for (int i = 0; i < list.Storage.Count; i++)
                 {
                     NuaValue? value = list.Storage[i];
-                    forContext.Values.Clear();
 
-                    if (value != null)
-                        forContext.Values[ValueName] = value;
+                    context.Set(ValueName, value);
                     if (KeyName != null)
-                        forContext.Values[KeyName] = new NuaNumber(i);
+                        context.Set(KeyName, new NuaNumber(i));
 
-                    result = Body.Evaluate(forContext, out var bodyState);
+                    result = Body.Evaluate(context, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -70,13 +63,12 @@ namespace Nua.CompileService.Syntaxes
                 for (int i = 0; i < str.Value.Length; i++)
                 {
                     char value = str.Value[i];
-                    forContext.Values.Clear();
 
-                    forContext.Values[ValueName] = new NuaString(value.ToString());
+                    context.Set(ValueName, new NuaString(value.ToString()));
                     if (KeyName != null)
-                        forContext.Values[KeyName] = new NuaNumber(i);
+                        context.Set(KeyName, new NuaNumber(i));
 
-                    result = Body.Evaluate(forContext, out var bodyState);
+                    result = Body.Evaluate(context, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;

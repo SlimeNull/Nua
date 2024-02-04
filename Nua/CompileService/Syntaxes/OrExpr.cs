@@ -30,17 +30,17 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(true);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!AndExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var left))
+            if (!AndExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
                 return false;
-            if (!OrTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var tail) && tailRequireMoreTokens)
+            if (!OrTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 

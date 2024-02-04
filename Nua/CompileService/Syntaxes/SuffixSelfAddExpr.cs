@@ -54,26 +54,27 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!ValueAccessExpr.Match(tokens, required, ref cursor, out _, out _, out var self))
+            if (!ValueAccessExpr.Match(tokens, required, ref cursor, out _, out var self))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
 
             Token operatorToken;
-            if (!TokenMatch(tokens, false, TokenKind.OptDoubleAdd, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, false, TokenKind.OptDoubleMin, ref cursor, out requireMoreTokens, out operatorToken))
+            if (!TokenMatch(tokens, false, TokenKind.OptDoubleAdd, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, false, TokenKind.OptDoubleMin, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
             {
                 index = cursor;
                 expr = self;
-                message = null;
+                parseStatus.Message = null;
                 return true;
             }
 
@@ -81,7 +82,7 @@ namespace Nua.CompileService.Syntaxes
 
             index = cursor;
             expr = new SuffixSelfAddExpr(self, negative);
-            message = null;
+            parseStatus.Message = null;
             return true;
         }
     }

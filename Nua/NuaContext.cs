@@ -4,56 +4,66 @@ namespace Nua
 {
     public class NuaContext
     {
-        public NuaContext? Parent { get; }
-        public Dictionary<string, NuaValue> Values { get; } = new();
+        private readonly Frame globalFrame = new();
+        private readonly Stack<Frame> frames = new();
 
-        public NuaContext(NuaContext parent)
+        public void SetGlobal(string name, NuaValue? value)
         {
-            Parent = parent;
+            if (value is not null)
+                globalFrame.Variables[name] = value;
+            else
+                globalFrame.Variables.Remove(name);
         }
 
-        public NuaContext()
+        public NuaValue? GetGlobal(string name)
         {
-
-        }
-
-        bool Modify(string name, NuaValue? value)
-        {
-            if (Parent != null && Parent.Modify(name, value))
-                return true;
-
-            if (Values.ContainsKey(name))
-            {
-                if (value == null)
-                    Values.Remove(name);
-                else
-                    Values[name] = value;
-
-                return true;
-            }
-
-            return false;
+            if (globalFrame.Variables.TryGetValue(name, out var globalValue))
+                return globalValue;
+            else
+                return null;
         }
 
         public void Set(string name, NuaValue? value)
         {
-            if (!Modify(name, value))
-            {
-                if (value == null)
-                    Values.Remove(name);
-                else
-                    Values[name] = value;
-            }
+            Frame targetFrame;
+
+            if (frames.TryPeek(out var frame) && !frame.GlobalTags.Contains(name))
+                targetFrame = frame;
+            else
+                targetFrame = globalFrame;
+
+            if (value is not null)
+                targetFrame.Variables[name] = value;
+            else
+                targetFrame.Variables.Remove(name);
         }
 
         public NuaValue? Get(string name)
         {
-            if (Values.TryGetValue(name, out var value))
-                return value;
-            if (Parent != null)
-                return Parent.Get(name);
+            if (frames.TryPeek(out var frame) && frame.Variables.TryGetValue(name, out var valueInFrame))
+            {
+                return valueInFrame;
+            }
+            else if (globalFrame.Variables.TryGetValue(name, out var globalValue))
+            {
+                return globalValue;
+            }
 
             return null;
+        }
+
+        public void PushFrame() => frames.Push(new());
+        public void PopFrame() => frames.Pop();
+        public void TagGlobal(string name)
+        {
+            if (frames.TryPeek(out var frame))
+                frame.GlobalTags.Add(name);
+        }
+
+        private class Frame
+        {
+            public readonly Dictionary<string, NuaValue> Variables = new();
+            public readonly HashSet<string> GlobalTags = new();
         }
     }
 }

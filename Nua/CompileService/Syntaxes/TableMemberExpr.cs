@@ -20,30 +20,31 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => Value.Evaluate(context);
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out TableMemberExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out TableMemberExpr? expr)
         {
+            parseStatus = new();
             expr = null;
             int cursor = index;
 
             Expr key;
-            if (TokenMatch(tokens, required, TokenKind.Identifier, ref cursor, out _, out var idToken))
+            if (TokenMatch(tokens, required, TokenKind.Identifier, ref cursor, out parseStatus.RequireMoreTokens, out var idToken))
                 key = new ConstExpr(new NuaString(idToken.Value!));
-            else if (ConstExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var constKey))
+            else if (ConstExpr.Match(tokens, required, ref cursor, out parseStatus, out var constKey))
                 key = constKey;
             else
                 return false;
 
-            if (!TokenMatch(tokens, true, TokenKind.OptColon, ref cursor, out _, out _))
+            if (!TokenMatch(tokens, true, TokenKind.OptColon, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                requireMoreTokens = true;
-                message = "Expect ':' after table member name while parsing 'table-expression'";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Expect ':' after table member name while parsing 'table-expression'";
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out message, out var value))
+            if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var value))
             {
-                if (message == null)
-                    message = "Expect expression after ':' while parsing 'table-expression'";
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect expression after ':' while parsing 'table-expression'";
 
                 return false;
             }

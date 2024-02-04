@@ -7,24 +7,17 @@ namespace Nua
 {
     public class NuaRuntime
     {
-        readonly NuaContext rootContext;
         public NuaContext Context { get; }
 
         public NuaRuntime()
         {
-            rootContext = new()
-            {
-                Values =
-                {
-                    ["print"] = new NuaPrintFunction(),
-                    ["len"] = new NuaLenFunction(),
-                    ["table"] = TableOperations.Create(),
-                    ["list"] = ListOperations.Create(),
-                    ["math"] = MathOperations.Create(),
-                }
-            };
+            Context = new NuaContext();
 
-            Context = new NuaContext(rootContext);
+            Context.SetGlobal("print", new NuaPrintFunction());
+            Context.SetGlobal("len", new NuaLenFunction());
+            Context.SetGlobal("table", TableOperations.Create());
+            Context.SetGlobal("list", ListOperations.Create());
+            Context.SetGlobal("math", MathOperations.Create());
         }
 
         public NuaValue? Evaluate(TextReader expressionReader)
@@ -47,7 +40,7 @@ namespace Nua
                 }
                 catch (NuaParseException parseException)
                 {
-                    if (!parseException.RequireMoreTokens)
+                    if (!parseException.Status.RequireMoreTokens)
                         throw parseException;
                 }
 

@@ -36,14 +36,15 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!PrimaryExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var left))
+            if (!PrimaryExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
                 return false;
-            if (!AssignTailExpr.Match(tokens, required, ref cursor, out requireMoreTokens, out message, out var tail))
+            if (!AssignTailExpr.Match(tokens, required, ref cursor, out parseStatus, out var tail))
                 return false;
 
             index = cursor;

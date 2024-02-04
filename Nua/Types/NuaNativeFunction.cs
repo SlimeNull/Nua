@@ -22,25 +22,27 @@ namespace Nua.Types
             if (Body == null)
                 return null;
 
-            NuaContext localContext = new NuaContext(context);
+            context.PushFrame();
 
             for (int i = 0; i < _parameterNames.Length && i < parameters.Length; i++)
-                localContext.Set(_parameterNames[i], parameters[i]);
+                context.Set(_parameterNames[i], parameters[i]);
 
             NuaValue? result = null;
             foreach (var expr in Body.Expressions)
             {
                 if (expr is ProcessExpr processExpr)
                 {
-                    result = processExpr.Evaluate(localContext, out var state);
+                    result = processExpr.Evaluate(context, out var state);
                     if (state != EvalState.None)
                         break;
                 }
                 else
                 {
-                    result = expr.Evaluate(localContext);
+                    result = expr.Evaluate(context);
                 }
             }
+
+            context.PopFrame();
 
             return result;
         }

@@ -29,37 +29,38 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(false);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out AndTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AndTailExpr? expr)
         {
+            parseStatus = new();
             expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.KwdAnd, ref cursor, out _, out _))
             {
-                requireMoreTokens = required;
-                message = null;
+                parseStatus.RequireMoreTokens = required;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!EqualExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
+            if (!EqualExpr.Match(tokens, true, ref cursor, out parseStatus, out var right))
             {
-                if (message == null)
-                    message = "Require 'equal-expression' after 'and' keyword";
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Require 'equal-expression' after 'and' keyword";
 
                 return false;
             }
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus.RequireMoreTokens = true;
+                parseStatus.Message = tailParseStatus.Message;
                 return false;
             }
 
             index = cursor;
             expr = new AndTailExpr(right, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

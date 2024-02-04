@@ -12,26 +12,28 @@ namespace Nua.CompileService.Syntaxes
             ContinueExpr.Match,
             ForExpr.Match,
             IfExpr.Match,
+            GlobalExpr.Match,
             UnaryExpr.Match,
         };
 
         public abstract NuaValue? Evaluate(NuaContext context, out EvalState state);
         public override NuaValue? Evaluate(NuaContext context) => Evaluate(context, out _);
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            requireMoreTokens = required;
-            message = null;
-            expr = null;
+            parseStatus.RequireMoreTokens = required;
+            parseStatus.Message = null;
+            parseStatus = new();
+expr = null;
 
             for (int i = 0; i < matchers.Length; i++)
             {
                 var matcher = matchers[i];
                 bool isLast = i == matchers.Length - 1;
 
-                if (matcher.Invoke(tokens, isLast ? required : false, ref index, out requireMoreTokens, out message, out expr))
+                if (matcher.Invoke(tokens, isLast ? required : false, ref index, out parseStatus, out expr))
                     return true;
-                else if (requireMoreTokens)
+                else if (parseStatus.Intercept)
                     return false;
             }
 

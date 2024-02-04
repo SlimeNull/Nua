@@ -4,23 +4,25 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class ForExpr : ProcessExpr
     {
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.KwdFor, ref cursor, out _, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.Intercept = required;
+                parseStatus.Message = null;
                 return false;
             }
 
             VariableExpr valueNameExpr;
-            if (!VariableExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var _valueNameExpr))
+            if (!VariableExpr.Match(tokens, true, ref cursor, out parseStatus, out var _valueNameExpr))
             {
-                if (message == null)
-                    message = "Require variable after 'for' keyword";
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Require variable after 'for' keyword";
 
                 return false;
             }
@@ -29,18 +31,20 @@ namespace Nua.CompileService.Syntaxes
 
             if (cursor >= tokens.Count)
             {
-                requireMoreTokens = true;
-                message = "Require 'in' or 'of' after variable name in 'for' expression";
+                parseStatus.Intercept = true;
+                parseStatus.RequireMoreTokens = true;
+                parseStatus.Message = "Require 'in' or 'of' after variable name in 'for' expression";
                 return false;
             }
 
             VariableExpr? keyNameExpr = null;
             if (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
             {
-                if (!VariableExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var _keyNameExpr))
+                if (!VariableExpr.Match(tokens, true, ref cursor, out parseStatus, out var _keyNameExpr))
                 {
-                    if (message == null)
-                        message = "Require variable after comma in 'for' expression";
+                    parseStatus.Intercept = true;
+                    if (parseStatus.Message == null)
+                        parseStatus.Message = "Require variable after comma in 'for' expression";
 
                     return false;
                 }
@@ -50,17 +54,19 @@ namespace Nua.CompileService.Syntaxes
 
                 if (cursor >= tokens.Count)
                 {
-                    requireMoreTokens = true;
-                    message = "Require 'in' or 'of' after variable name in 'for' expression";
+                    parseStatus.Intercept = true;
+                    parseStatus.RequireMoreTokens = true;
+                    parseStatus.Message = "Require 'in' or 'of' after variable name in 'for' expression";
                     return false;
                 }
             }
 
             Token forKindToken;
-            if (!TokenMatch(tokens, true, TokenKind.KwdIn, ref cursor, out requireMoreTokens, out forKindToken) &&
-                !TokenMatch(tokens, true, TokenKind.KwdOf, ref cursor, out requireMoreTokens, out forKindToken))
+            if (!TokenMatch(tokens, true, TokenKind.KwdIn, ref cursor, out parseStatus.RequireMoreTokens, out forKindToken) &&
+                !TokenMatch(tokens, true, TokenKind.KwdOf, ref cursor, out parseStatus.RequireMoreTokens, out forKindToken))
             {
-                message = "Require 'in' or 'of' after variable name in 'for' expression";
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require 'in' or 'of' after variable name in 'for' expression";
                 return false;
             }
 
@@ -73,48 +79,53 @@ namespace Nua.CompileService.Syntaxes
 
             if (operation == ForOperation.In)
             {
-                if (!Expr.MatchAny(tokens, true, ref cursor, out requireMoreTokens, out _, out var iterable))
+                if (!Expr.MatchAny(tokens, true, ref cursor, out parseStatus, out var iterable))
                 {
-                    message = "Require iterable expression after 'in' keyword of 'for' expression";
+                    parseStatus.Intercept = true;
+                    parseStatus.Message = "Require iterable expression after 'in' keyword of 'for' expression";
                     return false;
                 }
 
-                if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+                if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
                 {
-                    message = "Require big left bracket after 'for' iterable expression";
+                    parseStatus.Intercept = true;
+                    parseStatus.Message = "Require big left bracket after 'for' iterable expression";
                     return false;
                 }
 
-                if (!MultiExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out _, out var body))
+                if (!MultiExpr.Match(tokens, true, ref cursor, out parseStatus, out var body) && parseStatus.Intercept)
                 {
-                    message = "Require body expressions after 'for' iterable expression";
+                    parseStatus.Message = "Require body expressions after 'for' iterable expression";
                     return false;
                 }
 
-                if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+                if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
                 {
-                    message = "Require bit right bracket after 'for body' expressions";
+                    parseStatus.Intercept = true;
+                    parseStatus.Message = "Require bit right bracket after 'for body' expressions";
                     return false;
                 }
 
                 index = cursor;
                 expr = new ForInExpr(valueNameExpr.Name, keyNameExpr?.Name, iterable, body);
-                message = null;
+                parseStatus.Message = null;
                 return true;
             }
             else
             {
                 if (keyNameExpr != null)
                 {
-                    requireMoreTokens = false;
-                    message = "Only one variable name is needed in 'for-of' expression";
+                    parseStatus.Intercept = true;
+                    parseStatus.RequireMoreTokens = false;
+                    parseStatus.Message = "Only one variable name is needed in 'for-of' expression";
                     return false;
                 }
 
-                if (!ChainExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var chain))
+                if (!ChainExpr.Match(tokens, true, ref cursor, out parseStatus, out var chain))
                 {
-                    if (message == null)
-                        message = "Require interate values after 'of' keyword in 'for' expression";
+                    parseStatus.Intercept = true;
+                    if (parseStatus.Message == null)
+                        parseStatus.Message = "Require interate values after 'of' keyword in 'for' expression";
 
                     return false;
                 }
@@ -122,8 +133,9 @@ namespace Nua.CompileService.Syntaxes
                 if (chain.Expressions.Count < 2 ||
                     chain.Expressions.Count > 3)
                 {
-                    requireMoreTokens = false;
-                    message = "Invlaid interate value count after 'of' keyword in 'for' expression, must be 2 or 3";
+                    parseStatus.Intercept = true;
+                    parseStatus.RequireMoreTokens = false;
+                    parseStatus.Message = "Invlaid interate value count after 'of' keyword in 'for' expression, must be 2 or 3";
                     return false;
                 }
 
@@ -133,27 +145,29 @@ namespace Nua.CompileService.Syntaxes
                 if (chain.Expressions.Count == 3)
                     stepExpr = chain.Expressions[2];
 
-                if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out requireMoreTokens, out _))
+                if (!TokenMatch(tokens, true, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
                 {
-                    message = "Require big left bracket after 'for' iterable values";
+                    parseStatus.Intercept = true;
+                    parseStatus.Message = "Require big left bracket after 'for' iterable values";
                     return false;
                 }
 
-                if (!MultiExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out _, out var body))
+                if (!MultiExpr.Match(tokens, true, ref cursor, out parseStatus, out var body) && parseStatus.Intercept)
                 {
-                    message = "Require body expressions after 'for' iterable values";
+                    //parseStatus.Message = "Require body expressions after 'for' iterable values";
                     return false;
                 }
 
-                if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out requireMoreTokens, out _))
+                if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
                 {
-                    message = "Require bit right bracket after 'for body' expressions";
+                    parseStatus.Intercept = true;
+                    parseStatus.Message = "Require bit right bracket after 'for body' expressions";
                     return false;
                 }
 
                 index = cursor;
                 expr = new ForOfExpr(valueNameExpr.Name, startExpr, endExpr, stepExpr, body);
-                message = null;
+                parseStatus.Message = null;
                 return true;
             }
         }

@@ -54,26 +54,27 @@ namespace Nua.CompileService.Syntaxes
             }
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             Token operatorToken;
             if (!TokenMatch(tokens, required, TokenKind.OptDoubleAdd, ref cursor, out _, out operatorToken) &&
                 !TokenMatch(tokens, required, TokenKind.OptDoubleMin, ref cursor, out _, out operatorToken))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
             bool negative = operatorToken.Kind == TokenKind.OptDoubleMin;
 
-            if (!ValueAccessExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var self))
+            if (!ValueAccessExpr.Match(tokens, true, ref cursor, out parseStatus, out var self))
             {
-                if (message == null)
-                    message = "Expect 'value-access-expressoin' or 'variable-expression' after '++' or '--' while parsing 'prefix-self-add-expression'";
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'value-access-expressoin' or 'variable-expression' after '++' or '--' while parsing 'prefix-self-add-expression'";
 
                 return false;
             }

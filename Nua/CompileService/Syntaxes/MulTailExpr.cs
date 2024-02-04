@@ -55,19 +55,20 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out MulTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, required, TokenKind.OptMul, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptDiv, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptPow, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptMod, ref cursor, out requireMoreTokens, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptDivInt, ref cursor, out requireMoreTokens, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptMul, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptDiv, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptPow, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptMod, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptDivInt, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
             {
-                message = null;
+                parseStatus.Message = null;
                 return false;
             }
 
@@ -81,26 +82,25 @@ namespace Nua.CompileService.Syntaxes
                 _ => MulOperation.Mul
             };
 
-            if (!ProcessExpr.Match(tokens, true, ref cursor, out _, out message, out var right))
+            if (!ProcessExpr.Match(tokens, true, ref cursor, out parseStatus, out var right))
             {
-                requireMoreTokens = true;
-                if (message == null)
-                    message = "Expect expression after '*','/','**','//','%' while parsing 'mul-expression'";
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect expression after '*','/','**','//','%' while parsing 'mul-expression'";
 
                 return false;
             }
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail))
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = false;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new MulTailExpr(right, operation, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

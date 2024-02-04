@@ -14,24 +14,25 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => Chain.Evaluate(context);
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out QuotedChainExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out QuotedChainExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!ChainExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var chain))
+            if (!ChainExpr.Match(tokens, true, ref cursor, out parseStatus, out var chain))
                 return false;
 
-            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require ')' after 'chain-expression' while parsing 'quoted-chain-expression'";
+                parseStatus.Message = "Require ')' after 'chain-expression' while parsing 'quoted-chain-expression'";
                 return false;
             }
 

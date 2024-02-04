@@ -14,29 +14,30 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => Content.Evaluate(context);
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
             {
-                requireMoreTokens = false;
-                message = null;
+                parseStatus.RequireMoreTokens = false;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out requireMoreTokens, out message, out var content))
+            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var content))
             {
-                if (message == null)
-                    message = ("Expect expression after '(' token while parsing 'quote-expressoin'");
+                if (parseStatus.Message == null)
+                    parseStatus.Message = ("Expect expression after '(' token while parsing 'quote-expressoin'");
 
                 return false;
             }
 
-            if (!TokenMatch(tokens, required, TokenKind.ParenthesesRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, required, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Expect ')' after expression while parsing 'quote-expressoin'";
+                parseStatus.Message = "Expect ')' after expression while parsing 'quote-expressoin'";
                 return false;
             }
 

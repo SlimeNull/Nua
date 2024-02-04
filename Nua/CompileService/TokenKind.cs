@@ -29,6 +29,8 @@
         KwdFunction,
         KwdReturn,
 
+        KwdGlobal,
+
         OptColon,  // :
         OptComma,  // ,
         OptDot,    // .

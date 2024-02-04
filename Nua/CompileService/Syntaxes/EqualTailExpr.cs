@@ -34,17 +34,18 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out EqualTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
             Token operatorToken;
             if (!TokenMatch(tokens, required, TokenKind.OptEql, ref cursor, out _, out operatorToken) &&
                 !TokenMatch(tokens, required, TokenKind.OptNeq, ref cursor, out _, out operatorToken))
             {
-                requireMoreTokens = required;
-                message = null;
+                parseStatus.RequireMoreTokens = required;
+                parseStatus.Message = null;
                 return false;
             }
 
@@ -55,23 +56,22 @@ namespace Nua.CompileService.Syntaxes
                 _ => EqualOperation.Equal,
             };
 
-            if (!CompareExpr.Match(tokens, true, ref cursor, out _, out message, out var right))
+            if (!CompareExpr.Match(tokens, true, ref cursor, out parseStatus, out var right))
             {
-                requireMoreTokens = true;
+                parseStatus.Intercept = true;
                 return false;
             }
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new EqualTailExpr(right, operation, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

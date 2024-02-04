@@ -41,37 +41,38 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(true);
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out OrTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out OrTailExpr? expr)
         {
+            parseStatus = new();
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.KwdOr, ref cursor, out _, out _))
+            if (!TokenMatch(tokens, required, TokenKind.KwdOr, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                requireMoreTokens = required;
-                message = null;
+                parseStatus.Intercept = required;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!AndExpr.Match(tokens, true, ref cursor, out requireMoreTokens, out message, out var right))
+            if (!AndExpr.Match(tokens, true, ref cursor, out parseStatus, out var right))
             {
-                if (message == null)
-                    message = "Expect 'and-expression' after 'or' keyword";
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'and-expression' after 'or' keyword";
 
                 return false;
             }
 
-            if (!Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 
             index = cursor;
             expr = new OrTailExpr(right, nextTail);
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return true;
         }
     }

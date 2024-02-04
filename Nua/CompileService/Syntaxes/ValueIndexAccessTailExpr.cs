@@ -72,36 +72,36 @@ namespace Nua.CompileService.Syntaxes
             return result;
         }
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = null;
+                parseStatus.Message = null;
                 return false;
             }
 
-            if (!Expr.MatchAny(tokens, required, ref cursor, out _, out message, out var indexExpr))
+            if (!Expr.MatchAny(tokens, required, ref cursor, out parseStatus, out var indexExpr))
             {
-                requireMoreTokens = true;
-                if (message == null)
-                    message = "Require index after '[' while parsing 'value-access-expression'";
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Require index after '[' while parsing 'value-access-expression'";
 
                 return false;
             }
 
-            if (!TokenMatch(tokens, required, TokenKind.SquareBracketRight, ref cursor, out requireMoreTokens, out _))
+            if (!TokenMatch(tokens, required, TokenKind.SquareBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                message = "Require ']' after index while parsing 'value-access-expression'";
+                parseStatus.Message = "Require ']' after index while parsing 'value-access-expression'";
                 return false;
             }
 
-            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailRequireMoreTokens, out var tailMessage, out var nextTail) && tailRequireMoreTokens)
+            if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
-                requireMoreTokens = true;
-                message = tailMessage;
+                parseStatus = tailParseStatus;
                 return false;
             }
 

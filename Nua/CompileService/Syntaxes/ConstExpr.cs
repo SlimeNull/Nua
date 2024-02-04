@@ -14,13 +14,14 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => Value;
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out bool requireMoreTokens, out string? message, [NotNullWhen(true)] out Expr? expr)
+        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
-            expr = null;
+            parseStatus = new();
+expr = null;
             if (index < 0 || index >= tokens.Count)
             {
-                requireMoreTokens = required;
-                message = null;
+                parseStatus.RequireMoreTokens = required;
+                parseStatus.Message = null;
                 return false;
             }
 
@@ -40,8 +41,8 @@ namespace Nua.CompileService.Syntaxes
             if (expr != null)
                 index++;
 
-            requireMoreTokens = false;
-            message = null;
+            parseStatus.RequireMoreTokens = false;
+            parseStatus.Message = null;
             return expr != null;
         }
     }

@@ -45,17 +45,15 @@ namespace Nua.CompileService.Syntaxes
             double endValue = endNumber.Value;
             double stepValue = stepNumber?.Value ?? 1;
 
-            NuaContext forContext = new(context);
             NuaValue? result = null;
             if (endValue >= startValue)
             {
                 stepValue = Math.Abs(stepValue);
                 for (double value = startValue; value <= endValue; value += stepValue)
                 {
-                    forContext.Values.Clear();
-                    forContext.Values[ValueName] = new NuaNumber(value);
+                    context.Set(ValueName, new NuaNumber(value));
 
-                    result = Body.Evaluate(forContext, out var bodyState);
+                    result = Body.Evaluate(context, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;
@@ -68,10 +66,9 @@ namespace Nua.CompileService.Syntaxes
                 stepValue = -Math.Abs(stepValue);
                 for (double value = startValue; value >= endValue; value += stepValue)
                 {
-                    forContext.Values.Clear();
-                    forContext.Values[ValueName] = new NuaNumber(value);
+                    context.Set(ValueName, new NuaNumber(value));
 
-                    result = Body.Evaluate(forContext, out var bodyState);
+                    result = Body.Evaluate(context, out var bodyState);
 
                     if (bodyState == EvalState.Continue)
                         continue;

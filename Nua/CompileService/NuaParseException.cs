@@ -6,11 +6,11 @@
         {
         }
 
-        public NuaParseException(bool requireMoreTokens, string? message) : base(message)
+        public NuaParseException(ParseStatus parseStatus) : base(parseStatus.Message)
         {
-            RequireMoreTokens = requireMoreTokens;
+            Status = parseStatus;
         }
 
-        public bool RequireMoreTokens { get; }
+        public ParseStatus Status { get; }
     }
 }
