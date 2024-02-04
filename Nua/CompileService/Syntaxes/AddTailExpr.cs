@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes
@@ -16,62 +17,26 @@ namespace Nua.CompileService.Syntaxes
         public AddOperation Operation { get; }
         public AddTailExpr? NextTail { get; }
 
-        public NuaValue? Evaluate(NuaContext context, string leftValue)
+        public NuaValue? Evaluate(NuaContext context, NuaValue? left)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue =  Right.Evaluate(context);
 
-            if (rightValue == null)
-                throw new NuaEvalException("Unable to plus on a null value");
-            if (rightValue is not NuaString rightString)
-                throw new NuaEvalException("Unable to plus on a non-number value");
-
-            var result = Operation switch
+            NuaValue? result = Operation switch
             {
-                AddOperation.Add => leftValue + rightString.Value,
-                AddOperation.Min => leftValue.Replace(rightString.Value, null),
-                _ => leftValue + rightString.Value
+                AddOperation.Add => EvalUtilities.EvalPlus(left, rightValue),
+                AddOperation.Min => EvalUtilities.EvalMinus(left, rightValue),
+                _ => EvalUtilities.EvalPlus(left, rightValue)
             };
 
-            if (NextTail != null)
-                return NextTail.Evaluate(context, result);
+            if (NextTail is not null)
+                result = NextTail.Evaluate(context, result);
 
-            return new NuaString(result);
-        }
-
-        public NuaValue? Evaluate(NuaContext context, double leftValue)
-        {
-            var rightValue = Right.Evaluate(context);
-
-            if (rightValue == null)
-                throw new NuaEvalException("Unable to plus on a null value");
-            if (rightValue is not NuaNumber rightNumber)
-                throw new NuaEvalException("Unable to plus on a non-number value");
-
-            var result = Operation switch
-            {
-                AddOperation.Add => leftValue + rightNumber.Value,
-                AddOperation.Min => leftValue - rightNumber.Value,
-                _ => leftValue * rightNumber.Value
-            };
-
-            if (NextTail != null)
-                return NextTail.Evaluate(context, result);
-
-            return new NuaNumber(result);
+            return result;
         }
 
         public NuaValue? Evaluate(NuaContext context, Expr left)
         {
-            var leftValue = left.Evaluate(context);
-
-            if (leftValue == null)
-                throw new NuaEvalException("Unable to plus on a null value");
-            if (leftValue is NuaNumber leftNumber)
-                return Evaluate(context, leftNumber.Value);
-            if (leftValue is NuaString leftString)
-                return Evaluate(context, leftString.Value);
-
-            throw new NuaEvalException("Plus calculation can be only used on Number and String value");
+            return Evaluate(context, left.Evaluate(context));
         }
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
