@@ -27,7 +27,16 @@ namespace NuaConsole
                 return;
             }
 
+            if (Console.IsInputRedirected)
+            {
+                var input = Console.In.ReadToEnd();
+                runtime.Evaluate(input);
+
+                return;
+            }
+
             var version = Assembly.GetExecutingAssembly().GetName().Version;
+
             Console.WriteLine($"Nua V{version}");
             Console.WriteLine();
 
