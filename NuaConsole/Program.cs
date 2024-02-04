@@ -2,12 +2,13 @@
 using System.Text;
 using Nua;
 using Nua.CompileService;
+using PrettyPrompt;
 
 namespace NuaConsole
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var runtime = new NuaRuntime();
 
@@ -32,14 +33,22 @@ namespace NuaConsole
 
             StringBuilder inputBuffer = new();
 
+            Prompt prompt = new Prompt(
+                callbacks: new NuaReplPromptCallbacks(),
+                configuration: new PromptConfiguration(
+                    tabSize: 2,
+                    prompt: ">>> "));
+
             while (true)
             {
-                string prompt = inputBuffer.Length == 0 ? ">>> " : "... ";
-                Console.Write(prompt);
-                string? input = Console.ReadLine();
+                //string prompt = inputBuffer.Length == 0 ? ">>> " : "... ";
+                //Console.Write(prompt);
+                var promptResult = await prompt.ReadLineAsync();
 
-                if (input == null)
+                if (!promptResult.IsSuccess)
                     break;
+
+                string input = promptResult.Text;
 
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
