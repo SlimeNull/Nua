@@ -5,17 +5,17 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ListExpr : ValueExpr
     {
-        public IEnumerable<Expr> Values { get; }
+        public IEnumerable<Expr> ValueExpressions { get; }
 
-        public ListExpr(IEnumerable<Expr> values)
+        public ListExpr(IEnumerable<Expr> valueExpressions)
         {
-            Values = values;
+            ValueExpressions = valueExpressions;
         }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
             NuaList list = new();
-            foreach (var value in Values)
+            foreach (var value in ValueExpressions)
                 list.Storage.Add(value.Evaluate(context));
 
             return list;
@@ -24,7 +24,7 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.SquareBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))

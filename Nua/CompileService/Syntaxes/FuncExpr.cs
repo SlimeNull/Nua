@@ -6,16 +6,16 @@ namespace Nua.CompileService.Syntaxes
     public class FuncExpr : ValueExpr
     {
         public IReadOnlyList<string> ParameterNames { get; }
-        public MultiExpr? Body { get; }
+        public MultiExpr? BodyExpr { get; }
 
-        public FuncExpr(IEnumerable<string> parameterNames, MultiExpr? body)
+        public FuncExpr(IEnumerable<string> parameterNames, MultiExpr? bodyExpr)
         {
             ParameterNames = parameterNames.ToList().AsReadOnly();
-            Body = body;
+            BodyExpr = bodyExpr;
         }
 
         public override NuaValue? Evaluate(NuaContext context)
-            => new NuaNativeFunction(Body, ParameterNames.ToArray());
+            => new NuaNativeFunction(BodyExpr, ParameterNames.ToArray());
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {

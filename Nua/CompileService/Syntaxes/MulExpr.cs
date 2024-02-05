@@ -5,18 +5,18 @@ namespace Nua.CompileService.Syntaxes
 {
     public class MulExpr : Expr
     {
-        public MulExpr(Expr left, MulTailExpr tail)
+        public MulExpr(Expr leftExpr, MulTailExpr tailExpr)
         {
-            Left = left;
-            Tail = tail;
+            LeftExpr = leftExpr;
+            TailExpr = tailExpr;
         }
 
-        public Expr Left { get; }
-        public MulTailExpr Tail { get; }
+        public Expr LeftExpr { get; }
+        public MulTailExpr TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            return Tail.Evaluate(context, Left);
+            return TailExpr.Evaluate(context, LeftExpr);
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)

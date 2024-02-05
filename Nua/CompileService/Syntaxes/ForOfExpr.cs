@@ -4,13 +4,13 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ForOfExpr : ForExpr
     {
-        public ForOfExpr(string valueName, Expr start, Expr end, Expr? step, MultiExpr? body)
+        public ForOfExpr(string valueName, Expr startExpr, Expr endExpr, Expr? stepExpr, MultiExpr? bodyExpr)
         {
             ValueName = valueName;
-            StartExpr = start;
-            EndExpr = end;
-            StepExpr = step;
-            BodyExpr = body;
+            StartExpr = startExpr;
+            EndExpr = endExpr;
+            StepExpr = stepExpr;
+            BodyExpr = bodyExpr;
         }
 
         public string ValueName { get; }

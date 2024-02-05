@@ -5,34 +5,34 @@ namespace Nua.CompileService.Syntaxes
 {
     public class IfExpr : ProcessExpr
     {
-        public IfExpr(Expr condition, MultiExpr? body, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseExpr? elseExpressions)
+        public IfExpr(Expr conditionExpr, MultiExpr? bodyExpr, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseExpr? elseExpressions)
         {
-            Condition = condition;
-            Body = body;
+            ConditionExpr = conditionExpr;
+            BodyExpr = bodyExpr;
             ElseIfExpressions = elseIfExpressions?.ToList()?.AsReadOnly();
             ElseExpressions = elseExpressions;
         }
 
-        public Expr Condition { get; }
-        public MultiExpr? Body { get; }
+        public Expr ConditionExpr { get; }
+        public MultiExpr? BodyExpr { get; }
         public IReadOnlyList<ElseIfExpr>? ElseIfExpressions { get; }
         public ElseExpr? ElseExpressions { get; }
 
         public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = NuaUtilities.ConditionTest(Condition.Evaluate(context));
+            bool condition = NuaUtilities.ConditionTest(ConditionExpr.Evaluate(context));
 
             if (condition)
             {
                 executed = true;
 
-                if (Body == null)
+                if (BodyExpr == null)
                 {
                     state = EvalState.None;
                     return null;
                 }
 
-                return Body.Evaluate(context, out state);
+                return BodyExpr.Evaluate(context, out state);
             }
             else
             {

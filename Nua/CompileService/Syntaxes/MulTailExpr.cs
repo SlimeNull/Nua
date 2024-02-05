@@ -5,20 +5,20 @@ namespace Nua.CompileService.Syntaxes
 {
     public class MulTailExpr : Expr
     {
-        public MulTailExpr(Expr right, MulOperation operation, MulTailExpr? nextTail)
+        public MulTailExpr(Expr rightExpr, MulOperation operation, MulTailExpr? nextTailExpr)
         {
-            Right = right;
+            RightExpr = rightExpr;
             Operation = operation;
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
-        public Expr Right { get; }
+        public Expr RightExpr { get; }
         public MulOperation Operation { get; }
-        public MulTailExpr? NextTail { get; }
+        public MulTailExpr? NextTailExpr { get; }
 
         public NuaValue? Evaluate(NuaContext context, double leftValue)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue = RightExpr.Evaluate(context);
 
             if (rightValue == null)
                 throw new NuaEvalException("Unable to plus on a null value");
@@ -35,15 +35,15 @@ namespace Nua.CompileService.Syntaxes
                 _ => leftValue * rightNumber.Value
             };
 
-            if (NextTail != null)
-                return NextTail.Evaluate(context, result);
+            if (NextTailExpr != null)
+                return NextTailExpr.Evaluate(context, result);
 
             return new NuaNumber(result);
         }
 
         public NuaValue? Evaluate(NuaContext context, NuaValue? left)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue = RightExpr.Evaluate(context);
 
             NuaValue? result = Operation switch
             {
@@ -55,8 +55,8 @@ namespace Nua.CompileService.Syntaxes
                 _ => EvalUtilities.EvalMultiply(left, rightValue),
             };
 
-            if (NextTail is not null)
-                result = NextTail.Evaluate(context, result);
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Evaluate(context, result);
 
             return result;
         }

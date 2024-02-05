@@ -5,11 +5,11 @@ namespace Nua.CompileService.Syntaxes
 {
     public class TableExpr : ValueExpr
     {
-        public IReadOnlyList<TableMemberExpr> Members { get; }
+        public IReadOnlyList<TableMemberExpr> MemberExpressions { get; }
 
-        public TableExpr(IEnumerable<TableMemberExpr> members)
+        public TableExpr(IEnumerable<TableMemberExpr> memberExpressions)
         {
-            Members = members
+            MemberExpressions = memberExpressions
                 .ToList()
                 .AsReadOnly();
         }
@@ -18,9 +18,9 @@ namespace Nua.CompileService.Syntaxes
         {
             var table = new NuaNativeTable();
 
-            foreach (var member in Members)
+            foreach (var member in MemberExpressions)
             {
-                table.Set(member.Key.Evaluate(context)!, member.Value.Evaluate(context));
+                table.Set(member.KeyExpr.Evaluate(context)!, member.ValueExpr.Evaluate(context));
             }
 
             return table;
@@ -29,7 +29,7 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.BigBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))

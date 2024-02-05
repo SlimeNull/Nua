@@ -5,28 +5,28 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ElseExpr : ProcessExpr
     {
-        public ElseExpr(MultiExpr? body)
+        public ElseExpr(MultiExpr? bodyExpr)
         {
-            Body = body;
+            BodyExpr = bodyExpr;
         }
 
-        public MultiExpr? Body { get; }
+        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            if (Body == null)
+            if (BodyExpr == null)
             {
                 state = EvalState.None;
                 return null;
             }
 
-            return Body.Evaluate(context, out state);
+            return BodyExpr.Evaluate(context, out state);
         }
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.KwdElse, ref cursor, out parseStatus.RequireMoreTokens, out _))

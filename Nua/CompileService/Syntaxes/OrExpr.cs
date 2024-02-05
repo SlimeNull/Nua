@@ -5,27 +5,27 @@ namespace Nua.CompileService.Syntaxes
 {
     public class OrExpr : Expr
     {
-        public OrExpr(Expr left, OrTailExpr tail)
+        public OrExpr(Expr leftExpr, OrTailExpr tailExpr)
         {
-            Left = left;
-            Tail = tail;
+            LeftExpr = leftExpr;
+            TailExpr = tailExpr;
         }
 
-        public Expr Left { get; }
-        public OrTailExpr Tail { get; }
+        public Expr LeftExpr { get; }
+        public OrTailExpr TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            var leftValue = Left.Evaluate(context);
+            var leftValue = LeftExpr.Evaluate(context);
 
             if (leftValue == null)
-                return Tail.Evaluate(context);
+                return TailExpr.Evaluate(context);
 
             if (leftValue is not NuaBoolean leftBoolean)
                 return leftValue;
 
             if (!leftBoolean.Value)
-                return Tail.Evaluate(context);
+                return TailExpr.Evaluate(context);
 
             return new NuaBoolean(true);
         }

@@ -6,18 +6,18 @@ namespace Nua.CompileService.Syntaxes
 
     public class CompareExpr : Expr
     {
-        public CompareExpr(Expr left, CompareTailExpr tail)
+        public CompareExpr(Expr leftExpr, CompareTailExpr tailExpr)
         {
-            Left = left;
-            Tail = tail;
+            LeftExpr = leftExpr;
+            TailExpr = tailExpr;
         }
 
-        public Expr Left { get; }
-        public CompareTailExpr Tail { get; }
+        public Expr LeftExpr { get; }
+        public CompareTailExpr TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            return Tail.Evaluate(context, Left);
+            return TailExpr.Evaluate(context, LeftExpr);
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)

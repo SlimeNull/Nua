@@ -5,30 +5,30 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ElseIfExpr : ProcessExpr
     {
-        public ElseIfExpr(Expr condition, MultiExpr? body)
+        public ElseIfExpr(Expr conditionExpr, MultiExpr? bodyExpr)
         {
-            Condition = condition;
-            Body = body;
+            ConditionExpr = conditionExpr;
+            BodyExpr = bodyExpr;
         }
 
-        public Expr Condition { get; }
-        public MultiExpr? Body { get; }
+        public Expr ConditionExpr { get; }
+        public MultiExpr? BodyExpr { get; }
 
         public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
         {
-            bool condition = NuaUtilities.ConditionTest(Condition.Evaluate(context));
+            bool condition = NuaUtilities.ConditionTest(ConditionExpr.Evaluate(context));
 
             if (condition)
             {
                 executed = true;
 
-                if (Body == null)
+                if (BodyExpr == null)
                 {
                     state = EvalState.None;
                     return null;
                 }
 
-                return Body.Evaluate(context, out state);
+                return BodyExpr.Evaluate(context, out state);
             }
 
             executed = false;
@@ -44,7 +44,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseIfExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.KwdElif, ref cursor, out parseStatus.RequireMoreTokens, out _))

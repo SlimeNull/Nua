@@ -47,7 +47,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MultiExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             List<Expr> expressions = new();
 
             int cursor = index;

@@ -9,16 +9,16 @@ namespace Nua.CompileService.Syntaxes
     /// </summary>
     public class TableMemberExpr : Expr
     {
-        public TableMemberExpr(Expr key, Expr value)
+        public TableMemberExpr(Expr keyExpr, Expr valueExpr)
         {
-            Key = key;
-            Value = value;
+            KeyExpr = keyExpr;
+            ValueExpr = valueExpr;
         }
 
-        public Expr Key { get; }
-        public Expr Value { get; }
+        public Expr KeyExpr { get; }
+        public Expr ValueExpr { get; }
 
-        public override NuaValue? Evaluate(NuaContext context) => Value.Evaluate(context);
+        public override NuaValue? Evaluate(NuaContext context) => ValueExpr.Evaluate(context);
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out TableMemberExpr? expr)
         {

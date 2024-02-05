@@ -5,22 +5,22 @@ namespace Nua.CompileService.Syntaxes
 {
     public class CompareTailExpr : Expr
     {
-        public Expr Right { get; }
+        public Expr RightExpr { get; }
         public CompareOperation Operation { get; }
-        public CompareTailExpr? NextTail { get; }
+        public CompareTailExpr? NextTailExpr { get; }
 
-        public CompareTailExpr(Expr right, CompareOperation operation, CompareTailExpr? nextTail)
+        public CompareTailExpr(Expr rightExpr, CompareOperation operation, CompareTailExpr? nextTailExpr)
         {
-            Right = right;
+            RightExpr = rightExpr;
             Operation = operation;
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
         public NuaValue? Evaluate(NuaContext context, NuaValue? leftValue)
         {
             if (leftValue is not NuaNumber leftNumber)
                 throw new NuaEvalException("Unable to compare on a non-number value");
-            if (Right.Evaluate(context) is not NuaNumber rightNumber)
+            if (RightExpr.Evaluate(context) is not NuaNumber rightNumber)
                 throw new NuaEvalException("Unable to compare on a non-number value");
 
             bool result = Operation switch
@@ -45,7 +45,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             Token operatorToken;

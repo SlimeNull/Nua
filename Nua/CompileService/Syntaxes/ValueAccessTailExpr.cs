@@ -5,11 +5,11 @@ namespace Nua.CompileService.Syntaxes
 {
     public abstract class ValueAccessTailExpr : Expr
     {
-        public ValueAccessTailExpr? NextTail { get; }
+        public ValueAccessTailExpr? NextTailExpr { get; }
 
-        public ValueAccessTailExpr(ValueAccessTailExpr? nextTail)
+        public ValueAccessTailExpr(ValueAccessTailExpr? nextTailExpr)
         {
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
         public NuaValue? Evaluate(NuaContext context, Expr expr)
@@ -24,14 +24,14 @@ namespace Nua.CompileService.Syntaxes
 
         public void SetMemberValue(NuaContext context, NuaValue valueToAccess, NuaValue? newMemberValue)
         {
-            if (NextTail != null)
+            if (NextTailExpr != null)
             {
                 var value = Evaluate(context);
 
                 if (value == null)
                     throw new NuaEvalException("Unable to access member of null value");
 
-                NextTail.SetMemberValue(context, value, newMemberValue);
+                NextTailExpr.SetMemberValue(context, value, newMemberValue);
             }
 
             if (valueToAccess is NuaTable table)
@@ -40,7 +40,7 @@ namespace Nua.CompileService.Syntaxes
                 if (this is ValueMemberAccessTailExpr memberAccessTail)
                     key = new NuaString(memberAccessTail.Name);
                 else if (this is ValueIndexAccessTailExpr indexAccessTail)
-                    key = indexAccessTail.Index.Evaluate(context);
+                    key = indexAccessTail.IndexExpr.Evaluate(context);
                 else
                     throw new NuaEvalException("Only Table member, List member or Variable can be assigned");
 
@@ -51,7 +51,7 @@ namespace Nua.CompileService.Syntaxes
             {
                 NuaValue? index;
                 if (this is ValueIndexAccessTailExpr indexAccessTail)
-                    index = indexAccessTail.Index.Evaluate(context);
+                    index = indexAccessTail.IndexExpr.Evaluate(context);
                 else
                     throw new NuaEvalException("Only Table member, List member or Variable can be assigned");
 

@@ -6,25 +6,25 @@ namespace Nua.CompileService.Syntaxes
 
     public class OrTailExpr : Expr
     {
-        public OrTailExpr(Expr right, OrTailExpr? nextTail)
+        public OrTailExpr(Expr rightExpr, OrTailExpr? nextTailExpr)
         {
-            Right = right;
-            NextTail = nextTail;
+            RightExpr = rightExpr;
+            NextTailExpr = nextTailExpr;
         }
 
-        public Expr Right { get; }
-        public OrTailExpr? NextTail { get; }
+        public Expr RightExpr { get; }
+        public OrTailExpr? NextTailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue = RightExpr.Evaluate(context);
 
             if (rightValue == null)
             {
-                if (NextTail == null)
+                if (NextTailExpr == null)
                     return new NuaBoolean(false);
                 else
-                    return NextTail.Evaluate(context);
+                    return NextTailExpr.Evaluate(context);
             }
 
             if (rightValue is not NuaBoolean rightBoolean)
@@ -32,10 +32,10 @@ namespace Nua.CompileService.Syntaxes
 
             if (!rightBoolean.Value)
             {
-                if (NextTail == null)
+                if (NextTailExpr == null)
                     return new NuaBoolean(false);
                 else
-                    return NextTail.Evaluate(context);
+                    return NextTailExpr.Evaluate(context);
             }
 
             return new NuaBoolean(true);

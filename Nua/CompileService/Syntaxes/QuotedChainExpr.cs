@@ -5,19 +5,19 @@ namespace Nua.CompileService.Syntaxes
 {
     public class QuotedChainExpr : Syntax
     {
-        public QuotedChainExpr(ChainExpr chain)
+        public QuotedChainExpr(ChainExpr chainExpr)
         {
-            Chain = chain;
+            ChainExpr = chainExpr;
         }
 
-        public ChainExpr Chain { get; }
+        public ChainExpr ChainExpr { get; }
 
-        public override NuaValue? Evaluate(NuaContext context) => Chain.Evaluate(context);
+        public override NuaValue? Evaluate(NuaContext context) => ChainExpr.Evaluate(context);
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out QuotedChainExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))

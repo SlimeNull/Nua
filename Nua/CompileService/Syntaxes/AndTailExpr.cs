@@ -5,25 +5,25 @@ namespace Nua.CompileService.Syntaxes
 {
     public class AndTailExpr : Expr
     {
-        public AndTailExpr(Expr right, AndTailExpr? nextTail)
+        public AndTailExpr(Expr rightExpr, AndTailExpr? nextTailExpr)
         {
-            Right = right;
-            NextTail = nextTail;
+            RightExpr = rightExpr;
+            NextTailExpr = nextTailExpr;
         }
 
-        public Expr Right { get; }
-        public AndTailExpr? NextTail { get; }
+        public Expr RightExpr { get; }
+        public AndTailExpr? NextTailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue = RightExpr.Evaluate(context);
 
-            if (NextTail == null)
+            if (NextTailExpr == null)
                 return rightValue;
 
             if (rightValue is NuaBoolean leftBoolean && leftBoolean.Value)
             {
-                return NextTail.Evaluate(context);
+                return NextTailExpr.Evaluate(context);
             }
 
             return new NuaBoolean(false);

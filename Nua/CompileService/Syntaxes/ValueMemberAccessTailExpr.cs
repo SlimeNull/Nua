@@ -8,7 +8,7 @@ namespace Nua.CompileService.Syntaxes
 
     public class ValueMemberAccessTailExpr : ValueAccessTailExpr
     {
-        public ValueMemberAccessTailExpr(string name, ValueAccessTailExpr? nextTail) : base(nextTail)
+        public ValueMemberAccessTailExpr(string name, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
             Name = name;
         }
@@ -26,8 +26,8 @@ namespace Nua.CompileService.Syntaxes
             var key = new NuaString(Name);
             var value = table.Get(key);
 
-            if (NextTail != null)
-                value = NextTail.Evaluate(context, value);
+            if (NextTailExpr != null)
+                value = NextTailExpr.Evaluate(context, value);
 
             return value;
         }

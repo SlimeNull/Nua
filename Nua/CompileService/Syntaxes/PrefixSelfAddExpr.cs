@@ -5,18 +5,18 @@ namespace Nua.CompileService.Syntaxes
 {
     public class PrefixSelfAddExpr : UnaryExpr
     {
-        public PrefixSelfAddExpr(Expr self, bool negative)
+        public PrefixSelfAddExpr(Expr selfExpr, bool negative)
         {
-            Self = self;
+            SelfExpr = selfExpr;
             Negative = negative;
         }
 
-        public Expr Self { get; }
+        public Expr SelfExpr { get; }
         public bool Negative { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            if (Self is ValueAccessExpr memberAccessExpr)
+            if (SelfExpr is ValueAccessExpr memberAccessExpr)
             {
                 var self = memberAccessExpr.Evaluate(context);
 
@@ -32,7 +32,7 @@ namespace Nua.CompileService.Syntaxes
                 memberAccessExpr.SetMemberValue(context, newValue);
                 return newValue;
             }
-            else if (Self is VariableExpr variableExpr)
+            else if (SelfExpr is VariableExpr variableExpr)
             {
                 var self = variableExpr.Evaluate(context);
 

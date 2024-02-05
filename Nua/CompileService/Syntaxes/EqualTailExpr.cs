@@ -5,20 +5,20 @@ namespace Nua.CompileService.Syntaxes
 {
     public class EqualTailExpr : Expr
     {
-        public Expr Right { get; }
+        public Expr RightExpr { get; }
         public EqualOperation Operation { get; }
-        public EqualTailExpr? NextTail { get; }
+        public EqualTailExpr? NextTailExpr { get; }
 
-        public EqualTailExpr(Expr right, EqualOperation operation, EqualTailExpr? nextTail)
+        public EqualTailExpr(Expr rightExpr, EqualOperation operation, EqualTailExpr? nextTailExpr)
         {
-            Right = right;
+            RightExpr = rightExpr;
             Operation = operation;
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
         public NuaValue Evaluate(NuaContext context, NuaValue? leftValue)
         {
-            var rightValue = Right.Evaluate(context);
+            var rightValue = RightExpr.Evaluate(context);
 
             var result = Operation switch
             {
@@ -37,7 +37,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             Token operatorToken;

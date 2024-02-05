@@ -5,12 +5,12 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueIndexAccessTailExpr : ValueAccessTailExpr
     {
-        public ValueIndexAccessTailExpr(Expr index, ValueAccessTailExpr? nextTail) : base(nextTail)
+        public ValueIndexAccessTailExpr(Expr indexExpr, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
-            Index = index;
+            IndexExpr = indexExpr;
         }
 
-        public Expr Index { get; }
+        public Expr IndexExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
@@ -20,7 +20,7 @@ namespace Nua.CompileService.Syntaxes
             NuaValue? result;
             if (valueToAccess is NuaTable table)
             {
-                NuaValue? index = Index.Evaluate(context);
+                NuaValue? index = IndexExpr.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -29,7 +29,7 @@ namespace Nua.CompileService.Syntaxes
             }
             else if (valueToAccess is NuaList list)
             {
-                NuaValue? index = Index.Evaluate(context);
+                NuaValue? index = IndexExpr.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -48,7 +48,7 @@ namespace Nua.CompileService.Syntaxes
             }
             else if (valueToAccess is NuaString str)
             {
-                NuaValue? index = Index.Evaluate(context);
+                NuaValue? index = IndexExpr.Evaluate(context);
 
                 if (index == null)
                     throw new NuaEvalException("Index is null");
@@ -70,8 +70,8 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaEvalException("Only Dictionary, List and String can be indexed");
             }
 
-            if (NextTail != null)
-                result = NextTail.Evaluate(context, result);
+            if (NextTailExpr != null)
+                result = NextTailExpr.Evaluate(context, result);
 
             return result;
         }

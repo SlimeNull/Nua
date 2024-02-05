@@ -5,16 +5,16 @@ namespace Nua.CompileService.Syntaxes
 {
     public class InvertNumberExpr : UnaryExpr
     {
-        public InvertNumberExpr(Expr expr)
+        public InvertNumberExpr(Expr valueExpr)
         {
-            Expr = expr;
+            ValueExpr = valueExpr;
         }
 
-        public Expr Expr { get; }
+        public Expr ValueExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            var value = Expr.Evaluate(context);
+            var value = ValueExpr.Evaluate(context);
 
             if (value == null)
                 throw new NuaEvalException("Unable to take negation of null value");
@@ -27,7 +27,7 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.OptMin, ref cursor, out _, out _))

@@ -6,20 +6,20 @@ namespace Nua.CompileService.Syntaxes
 {
     public class AddTailExpr : Expr
     {
-        public AddTailExpr(Expr right, AddOperation operation, AddTailExpr? nextTail)
+        public AddTailExpr(Expr rightExpr, AddOperation operation, AddTailExpr? nextTailExpr)
         {
-            Right = right;
+            RightExpr = rightExpr;
             Operation = operation;
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
-        public Expr Right { get; }
+        public Expr RightExpr { get; }
         public AddOperation Operation { get; }
-        public AddTailExpr? NextTail { get; }
+        public AddTailExpr? NextTailExpr { get; }
 
         public NuaValue? Evaluate(NuaContext context, NuaValue? left)
         {
-            var rightValue =  Right.Evaluate(context);
+            var rightValue =  RightExpr.Evaluate(context);
 
             NuaValue? result = Operation switch
             {
@@ -28,8 +28,8 @@ namespace Nua.CompileService.Syntaxes
                 _ => EvalUtilities.EvalPlus(left, rightValue)
             };
 
-            if (NextTail is not null)
-                result = NextTail.Evaluate(context, result);
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Evaluate(context, result);
 
             return result;
         }

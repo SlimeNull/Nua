@@ -5,24 +5,24 @@ namespace Nua.CompileService.Syntaxes
 {
     public class AssignTailExpr : Expr
     {
-        public AssignTailExpr(Expr right, AssignOperation operation, AssignTailExpr? nextTail)
+        public AssignTailExpr(Expr rightExpr, AssignOperation operation, AssignTailExpr? nextTailExpr)
         {
-            Right = right;
+            RightExpr = rightExpr;
             Operation = operation;
-            NextTail = nextTail;
+            NextTailExpr = nextTailExpr;
         }
 
-        public Expr Right { get; }
+        public Expr RightExpr { get; }
         public AssignOperation Operation { get; }
-        public AssignTailExpr? NextTail { get; }
+        public AssignTailExpr? NextTailExpr { get; }
 
         public NuaValue? Evaluate(NuaContext context, Expr left)
         {
             NuaValue? toAssign = null;
-            if (NextTail == null)
-                toAssign = Right.Evaluate(context);
+            if (NextTailExpr == null)
+                toAssign = RightExpr.Evaluate(context);
             else
-                toAssign = NextTail.Evaluate(context, Right);
+                toAssign = NextTailExpr.Evaluate(context, RightExpr);
 
             var newValue = Operation switch
             {

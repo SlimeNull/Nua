@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueInvokeAccessTailExpr : ValueAccessTailExpr
     {
-        public ValueInvokeAccessTailExpr(IEnumerable<Expr> parameters, ValueAccessTailExpr? nextTail) : base(nextTail)
+        public ValueInvokeAccessTailExpr(IEnumerable<Expr> parameterExpressions, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
-            Parameters = parameters
+            ParameterExpressions = parameterExpressions
                 .ToList()
                 .AsReadOnly();
         }
 
-        public IReadOnlyList<Expr> Parameters { get; }
+        public IReadOnlyList<Expr> ParameterExpressions { get; }
 
         public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
@@ -22,14 +22,14 @@ namespace Nua.CompileService.Syntaxes
             if (valueToAccess is not NuaFunction function)
                 throw new NuaEvalException("Unable to invoke a non-function value");
 
-            NuaValue?[] parameterValues = Parameters
+            NuaValue?[] parameterValues = ParameterExpressions
                 .Select(p => p.Evaluate(context))
                 .ToArray();
 
             var result = function.Invoke(context, parameterValues);
 
-            if (NextTail != null)
-                result = NextTail.Evaluate(context, result);
+            if (NextTailExpr != null)
+                result = NextTailExpr.Evaluate(context, result);
 
             return result;
         }
@@ -37,7 +37,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))

@@ -5,23 +5,23 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ReturnExpr : ProcessExpr
     {
-        public Expr? Value { get; }
+        public Expr? ValueExpr { get; }
 
-        public ReturnExpr(Expr? value)
+        public ReturnExpr(Expr? valueExpr)
         {
-            Value = value;
+            ValueExpr = valueExpr;
         }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
             state = EvalState.Return;
-            return Value?.Evaluate(context);
+            return ValueExpr?.Evaluate(context);
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.KwdReturn, ref cursor, out parseStatus.RequireMoreTokens, out _))

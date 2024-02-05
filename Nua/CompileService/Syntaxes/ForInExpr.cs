@@ -6,12 +6,12 @@ namespace Nua.CompileService.Syntaxes
 
     public class ForInExpr : ForExpr
     {
-        public ForInExpr(string valueName, string? keyName, Expr iterable, MultiExpr? body)
+        public ForInExpr(string valueName, string? keyName, Expr iterableExpr, MultiExpr? bodyExpr)
         {
             ValueName = valueName;
             KeyName = keyName;
-            IterableExpr = iterable;
-            BodyExpr = body;
+            IterableExpr = iterableExpr;
+            BodyExpr = bodyExpr;
         }
 
         public string ValueName { get; }

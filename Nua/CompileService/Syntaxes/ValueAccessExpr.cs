@@ -6,28 +6,28 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueAccessExpr : PrimaryExpr
     {
-        public ValueAccessExpr(ValueExpr value, ValueAccessTailExpr tail)
+        public ValueAccessExpr(ValueExpr valueExpr, ValueAccessTailExpr tailExpr)
         {
-            Value = value ?? throw new ArgumentNullException(nameof(value));
-            Tail = tail;
+            ValueExpr = valueExpr ?? throw new ArgumentNullException(nameof(valueExpr));
+            TailExpr = tailExpr;
         }
 
-        public ValueExpr Value { get; }
-        public ValueAccessTailExpr Tail { get; }
+        public ValueExpr ValueExpr { get; }
+        public ValueAccessTailExpr TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            return Tail.Evaluate(context, Value);
+            return TailExpr.Evaluate(context, ValueExpr);
         }
 
         public void SetMemberValue(NuaContext context, NuaValue? value)
         {
-            Tail.SetMemberValue(context, Value, value);
+            TailExpr.SetMemberValue(context, ValueExpr, value);
         }
 
         public void SetMemberValue(NuaContext context, Expr valueExpr)
         {
-            Tail.SetMemberValue(context, Value, valueExpr.Evaluate(context));
+            TailExpr.SetMemberValue(context, ValueExpr, valueExpr.Evaluate(context));
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
