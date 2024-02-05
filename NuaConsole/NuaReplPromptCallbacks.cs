@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
 using Nua.CompileService;
+using Nua.CompileService.Syntaxes;
 using PrettyPrompt;
 using PrettyPrompt.Consoles;
 using PrettyPrompt.Highlighting;
@@ -22,6 +23,8 @@ namespace NuaConsole
         static readonly AnsiColor numberColor = AnsiColor.Rgb(181, 206, 168);
         static readonly AnsiColor stringColor = AnsiColor.Rgb(206, 145, 120);
         static readonly AnsiColor boolAndNullColor = AnsiColor.Rgb(79, 193, 255);
+        static readonly AnsiColor operatorColor = AnsiColor.Rgb(180, 180, 180);
+        static readonly AnsiColor bracketColor = AnsiColor.Rgb(220, 220, 220);
 
 
         readonly Dictionary<TokenKind, ConsoleFormat> tokenKindColors = new()
@@ -47,37 +50,41 @@ namespace NuaConsole
             [TokenKind.KwdFunction] = new ConsoleFormat(kwdFuncColor),
             [TokenKind.KwdReturn] = new ConsoleFormat(kwdColor),
             [TokenKind.KwdGlobal] = new ConsoleFormat(kwdColor),
-            [TokenKind.OptColon] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptComma] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptDot] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptAdd] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptMin] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptMul] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptDiv] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptMod] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptAddWith] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptMinWith] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptPow] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptDivInt] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptDoubleAdd] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptDoubleMin] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptEql] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptNeq] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptLss] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptLeq] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptGtr] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptGeq] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.OptAssign] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.ParenthesesLeft] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.ParenthesesRight] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.SquareBracketLeft] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.SquareBracketRight] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.BigBracketLeft] = new ConsoleFormat(AnsiColor.White),
-            [TokenKind.BigBracketRight] = new ConsoleFormat(AnsiColor.White),
+            [TokenKind.OptColon] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptComma] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptDot] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptAdd] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptMin] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptMul] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptDiv] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptMod] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptAddWith] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptMinWith] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptPow] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptDivInt] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptDoubleAdd] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptDoubleMin] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptEql] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptNeq] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptLss] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptLeq] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptGtr] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptGeq] = new ConsoleFormat(operatorColor),
+            [TokenKind.OptAssign] = new ConsoleFormat(operatorColor),
+            [TokenKind.ParenthesesLeft] = new ConsoleFormat(bracketColor),
+            [TokenKind.ParenthesesRight] = new ConsoleFormat(bracketColor),
+            [TokenKind.SquareBracketLeft] = new ConsoleFormat(bracketColor),
+            [TokenKind.SquareBracketRight] = new ConsoleFormat(bracketColor),
+            [TokenKind.BigBracketLeft] = new ConsoleFormat(bracketColor),
+            [TokenKind.BigBracketRight] = new ConsoleFormat(bracketColor),
             [TokenKind.Identifier] = new ConsoleFormat(idColor),
             [TokenKind.String] = new ConsoleFormat(stringColor),
             [TokenKind.Number] = new ConsoleFormat(numberColor),
         };
+
+        IList<Token>? _tokens;
+        Expr? _expr;
+        bool _isCompleteExpr = true;
 
         protected override async Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
@@ -85,22 +92,7 @@ namespace NuaConsole
                 keyPress.ConsoleKeyInfo.Modifiers == default &&
                 !string.IsNullOrWhiteSpace(text))
             {
-                bool isCompleteExpr;
-
-                try
-                {
-                    var reader = new StringReader(text);
-                    var tokens = Lexer.Lex(reader).ToArray();
-                    Parser.Parse(tokens);
-
-                    isCompleteExpr = true;
-                }
-                catch (NuaParseException parseException)
-                {
-                    isCompleteExpr = !parseException.Status.RequireMoreTokens;
-                }
-
-                if (!isCompleteExpr)
+                if (!_isCompleteExpr)
                     return NewLineWithIndentation(GetSmartIndentationLevel(text, caret));
             }
 
@@ -113,8 +105,23 @@ namespace NuaConsole
 
         protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
-            var keyChar = keyPress.ConsoleKeyInfo.KeyChar;
+            var reader = new StringReader(text);
 
+            _tokens = Lexer.Lex(reader).ToList();
+            _expr = null;
+
+            try
+            {
+                _expr = Parser.Parse(_tokens);
+                _isCompleteExpr = true;
+            }
+            catch (NuaParseException parseException)
+            {
+                _isCompleteExpr = !parseException.Status.RequireMoreTokens;
+            }
+
+            var keyChar = keyPress.ConsoleKeyInfo.KeyChar;
+            
             if (caret > 0)
             {
                 switch (keyChar)
@@ -177,17 +184,17 @@ namespace NuaConsole
         {
             List<FormatSpan> result = new List<FormatSpan>();
 
-            var reader = new StringReader(text);
-            var tokens = Lexer.Lex(reader);
-
             try
             {
-                foreach (var token in tokens)
+                if (_tokens != null)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
+                    foreach (var token in _tokens)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                            break;
 
-                    result.Add(FormatSpan.FromBounds(token.StartIndex, token.EndIndex, tokenKindColors[token.Kind]));
+                        result.Add(FormatSpan.FromBounds(token.StartIndex, token.EndIndex, tokenKindColors[token.Kind]));
+                    }
                 }
             }
             catch { }

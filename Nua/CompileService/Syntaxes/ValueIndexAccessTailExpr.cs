@@ -39,6 +39,8 @@ namespace Nua.CompileService.Syntaxes
                 int intIndex = (int)number.Value;
                 if (intIndex != number.Value)
                     result = null;
+                if (intIndex < 0)
+                    intIndex = list.Storage.Count + intIndex;
                 if (intIndex < 0 || intIndex >= list.Storage.Count)
                     result = null;
 
@@ -56,6 +58,8 @@ namespace Nua.CompileService.Syntaxes
                 int intIndex = (int)number.Value;
                 if (intIndex != number.Value)
                     result = null;
+                if (intIndex < 0)
+                    intIndex = str.Value.Length + intIndex;
                 if (intIndex < 0 || intIndex >= str.Value.Length)
                     result = null;
 

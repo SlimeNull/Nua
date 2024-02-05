@@ -24,7 +24,7 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaEvalException("Unable to access member of non-table value");
 
             var key = new NuaString(Name);
-            var value = table.Get(key); 
+            var value = table.Get(key);
 
             if (NextTail != null)
                 value = NextTail.Evaluate(context, value);
@@ -37,7 +37,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!TokenMatch(tokens, required, TokenKind.OptDot, ref cursor, out _, out _))

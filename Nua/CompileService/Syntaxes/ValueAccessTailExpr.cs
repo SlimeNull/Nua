@@ -24,9 +24,6 @@ namespace Nua.CompileService.Syntaxes
 
         public void SetMemberValue(NuaContext context, NuaValue valueToAccess, NuaValue? newMemberValue)
         {
-            if (valueToAccess is not NuaTable table)
-                throw new NuaEvalException("Unable to access member of non-table value");
-
             if (NextTail != null)
             {
                 var value = Evaluate(context);
@@ -36,7 +33,8 @@ namespace Nua.CompileService.Syntaxes
 
                 NextTail.SetMemberValue(context, value, newMemberValue);
             }
-            else
+
+            if (valueToAccess is NuaTable table)
             {
                 NuaValue? key;
                 if (this is ValueMemberAccessTailExpr memberAccessTail)
@@ -44,10 +42,39 @@ namespace Nua.CompileService.Syntaxes
                 else if (this is ValueIndexAccessTailExpr indexAccessTail)
                     key = indexAccessTail.Index.Evaluate(context);
                 else
-                    throw new NuaEvalException("Only Value member or Variable can be assigned");
+                    throw new NuaEvalException("Only Table member, List member or Variable can be assigned");
 
                 if (key != null)
                     table.Set(key, newMemberValue);
+            }
+            else if (valueToAccess is NuaList list)
+            {
+                NuaValue? index;
+                if (this is ValueIndexAccessTailExpr indexAccessTail)
+                    index = indexAccessTail.Index.Evaluate(context);
+                else
+                    throw new NuaEvalException("Only Table member, List member or Variable can be assigned");
+
+                if (index is not NuaNumber indexNumber)
+                    throw new NuaEvalException("List index is not number");
+
+                int realIndex = (int)indexNumber.Value;
+                if (realIndex < 0)
+                {
+                    realIndex = list.Storage.Count + realIndex;
+                    if (realIndex < 0)
+                        throw new NuaEvalException("List index is out of range");
+                }
+
+                list.Storage.EnsureCapacity(realIndex + 1);
+                while (list.Storage.Count <= realIndex)
+                    list.Storage.Add(null);
+
+                list.Storage[realIndex] = newMemberValue;
+            }
+            else
+            {
+                throw new NuaEvalException("Unable to access member of non-table value");
             }
         }
 
@@ -75,7 +102,7 @@ namespace Nua.CompileService.Syntaxes
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             if (ValueIndexAccessTailExpr.Match(tokens, required, ref index, out parseStatus, out var expr3))
                 expr = expr3;
             else if (ValueInvokeAccessTailExpr.Match(tokens, required, ref index, out parseStatus, out var expr2))
