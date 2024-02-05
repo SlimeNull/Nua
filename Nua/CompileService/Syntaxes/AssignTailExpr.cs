@@ -60,11 +60,11 @@ namespace Nua.CompileService.Syntaxes
             int cursor = index;
 
             Token operatorToken;
-            if (!TokenMatch(tokens, required, TokenKind.OptAssign, ref cursor, out _, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptAddWith, ref cursor, out _, out operatorToken) &&
-                !TokenMatch(tokens, required, TokenKind.OptMinWith, ref cursor, out _, out operatorToken))
+            if (!TokenMatch(tokens, required, TokenKind.OptAssign, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptAddWith, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+                !TokenMatch(tokens, required, TokenKind.OptMinWith, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
             {
-                parseStatus.RequireMoreTokens = required;
+                parseStatus.Intercept = required;
                 parseStatus.Message = null;
                 return false;
             }

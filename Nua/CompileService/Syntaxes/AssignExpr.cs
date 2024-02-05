@@ -25,13 +25,13 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!PrimaryExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
+            if (!OrExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
                 return false;
-            if (!AssignTailExpr.Match(tokens, required, ref cursor, out parseStatus, out var tail))
+            if (!AssignTailExpr.Match(tokens, false, ref cursor, out parseStatus, out var tail) && parseStatus.Intercept)
                 return false;
 
             index = cursor;
-            expr = new AssignExpr(left, tail);
+            expr = tail != null ? new AssignExpr(left, tail) : left;
             return true;
         }
     }

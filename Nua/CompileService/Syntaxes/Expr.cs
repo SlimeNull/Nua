@@ -17,7 +17,7 @@ namespace Nua.CompileService.Syntaxes
             parseStatus.RequireMoreTokens = required;
             parseStatus.Message = null;
             parseStatus = new();
-expr = null;
+            expr = null;
 
             for (int i = 0; i < matchers.Length; i++)
             {

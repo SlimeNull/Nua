@@ -82,7 +82,8 @@ namespace NuaConsole
         protected override async Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
             if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter &&
-                keyPress.ConsoleKeyInfo.Modifiers == default)
+                keyPress.ConsoleKeyInfo.Modifiers == default &&
+                !string.IsNullOrWhiteSpace(text))
             {
                 bool isCompleteExpr;
 
