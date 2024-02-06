@@ -2,6 +2,14 @@
 
 A simple scripting language similar to Lua
 
+<div align=center>
+
+![](/preview.png)
+
+</div>
+
+<br/>
+
 ## Usage
 
 ```csharp
@@ -14,7 +22,7 @@ var result = runtime.Evaluate("114000 + 514")
 
 ## Syntaxes
 
-```txt
+```python
 # some number
 v1 = 114514
 
