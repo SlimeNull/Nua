@@ -11,6 +11,11 @@ namespace Nua.CompileService.Syntaxes
             return null;
         }
 
+        public override CompiledProcessSyntax Compile()
+        {
+            return CompiledProcessSyntax.Create(null, EvalState.Continue);
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

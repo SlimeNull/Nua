@@ -26,6 +26,32 @@ namespace Nua.CompileService.Syntaxes
             return table;
         }
 
+        public override CompiledSyntax Compile()
+        {
+            NuaValue? bufferedValue = null;
+
+            List<(CompiledSyntax Key, CompiledSyntax Value)> compiledMembers = new(MemberExpressions.Count);
+            foreach (var member in MemberExpressions)
+                compiledMembers.Add((member.KeyExpr.Compile(), member.ValueExpr.Compile()));
+
+            return CompiledSyntax.CreateFromDelegate(context =>
+            {
+                if (bufferedValue == null)
+                {
+                    var table = new NuaNativeTable();
+
+                    foreach (var member in compiledMembers)
+                    {
+                        table.Set(member.Key.Evaluate(context)!, member.Value.Evaluate(context));
+                    }
+
+                    bufferedValue = table;
+                }
+
+                return bufferedValue;
+            });
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

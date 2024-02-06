@@ -21,12 +21,31 @@ namespace Nua.CompileService.Syntaxes
             if (NextTailExpr == null)
                 return rightValue;
 
-            if (rightValue is NuaBoolean leftBoolean && leftBoolean.Value)
+            if (EvalUtilities.ConditionTest(rightValue))
             {
                 return NextTailExpr.Evaluate(context);
             }
 
-            return new NuaBoolean(false);
+            return rightValue;
+        }
+
+        public override CompiledSyntax Compile()
+        {
+            var compiledRight = RightExpr.Compile();
+
+            if (NextTailExpr == null)
+                return compiledRight;
+
+            var compiledNextTail = NextTailExpr.Compile();
+
+            return CompiledSyntax.CreateFromDelegate((context) =>
+            {
+                var right = compiledRight.Evaluate(context);
+                if (EvalUtilities.ConditionTest(right))
+                    return compiledNextTail.Evaluate(context);
+                else
+                    return right;
+            });
         }
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AndTailExpr? expr)

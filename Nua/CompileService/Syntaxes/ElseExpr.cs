@@ -12,16 +12,8 @@ namespace Nua.CompileService.Syntaxes
             BodyExpr = bodyExpr;
         }
 
-        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
-        {
-            if (BodyExpr == null)
-            {
-                state = EvalState.None;
-                return null;
-            }
-
-            return BodyExpr.Evaluate(context, out state);
-        }
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state) => throw new InvalidOperationException();
+        public override CompiledProcessSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseExpr? expr)
         {

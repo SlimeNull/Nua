@@ -21,6 +21,7 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
+            state = EvalState.None;
             var start = StartExpr.Evaluate(context);
 
             if (start == null)
@@ -35,8 +36,7 @@ namespace Nua.CompileService.Syntaxes
             if (end is not NuaNumber endNumber)
                 throw new NuaEvalException("End value of 'for-of' statement not number");
 
-            NuaNumber? stepNumber = null;
-            var step = StepExpr?.Evaluate(context) as NuaNumber;
+            NuaNumber? stepNumber = StepExpr?.Evaluate(context) as NuaNumber;
 
             if (StepExpr != null && stepNumber == null)
                 throw new NuaEvalException("Step value of 'for-of' statement not number");
@@ -57,9 +57,18 @@ namespace Nua.CompileService.Syntaxes
                     result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
+                    {
                         continue;
+                    }
                     else if (bodyState == EvalState.Break)
+                    {
                         break;
+                    }
+                    else if (bodyState == EvalState.Return)
+                    {
+                        state = EvalState.Return;
+                        break;
+                    }
                 }
             }
             else
@@ -73,14 +82,112 @@ namespace Nua.CompileService.Syntaxes
                     result = BodyExpr?.Evaluate(context, out bodyState);
 
                     if (bodyState == EvalState.Continue)
+                    {
                         continue;
+                    }
                     else if (bodyState == EvalState.Break)
+                    {
                         break;
+                    }
+                    else if (bodyState == EvalState.Return)
+                    {
+                        state = EvalState.Return;
+                        break;
+                    }
                 }
             }
 
-            state = EvalState.None;
             return result;
+        }
+
+        public override CompiledProcessSyntax Compile()
+        {
+            CompiledSyntax compiledStart = StartExpr.Compile();
+            CompiledSyntax compiledEnd = EndExpr.Compile();
+            CompiledSyntax? compiledStep = StepExpr?.Compile();
+            CompiledProcessSyntax? compiledBody = BodyExpr?.Compile();
+
+            return CompiledProcessSyntax.CreateFromDelegate(
+                delegate (NuaContext context, out EvalState state)
+                {
+                    state = EvalState.None;
+                    var start = compiledStart.Evaluate(context);
+
+                    if (start == null)
+                        throw new NuaEvalException("Start value of 'for-of' statement is null");
+                    if (start is not NuaNumber startNumber)
+                        throw new NuaEvalException("Start value of 'for-of' statement not number");
+
+                    var end = compiledEnd.Evaluate(context);
+
+                    if (end == null)
+                        throw new NuaEvalException("End value of 'for-of' statement is null");
+                    if (end is not NuaNumber endNumber)
+                        throw new NuaEvalException("End value of 'for-of' statement not number");
+
+                    NuaNumber? stepNumber = compiledStep?.Evaluate(context) as NuaNumber;
+
+                    if (compiledStep != null && stepNumber == null)
+                        throw new NuaEvalException("Step value of 'for-of' statement not number");
+
+                    double startValue = startNumber.Value;
+                    double endValue = endNumber.Value;
+                    double stepValue = stepNumber?.Value ?? 1;
+
+                    NuaValue? result = null;
+                    if (endValue >= startValue)
+                    {
+                        stepValue = Math.Abs(stepValue);
+                        for (double value = startValue; value <= endValue; value += stepValue)
+                        {
+                            context.Set(ValueName, new NuaNumber(value));
+
+                            EvalState bodyState = EvalState.None;
+                            result = compiledBody?.Evaluate(context, out bodyState);
+
+                            if (bodyState == EvalState.Continue)
+                            {
+                                continue;
+                            }
+                            else if (bodyState == EvalState.Break)
+                            {
+                                break;
+                            }
+                            else if (bodyState == EvalState.Return)
+                            {
+                                state = EvalState.Return;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        stepValue = -Math.Abs(stepValue);
+                        for (double value = startValue; value >= endValue; value += stepValue)
+                        {
+                            context.Set(ValueName, new NuaNumber(value));
+
+                            EvalState bodyState = EvalState.None;
+                            result = compiledBody?.Evaluate(context, out bodyState);
+
+                            if (bodyState == EvalState.Continue)
+                            {
+                                continue;
+                            }
+                            else if (bodyState == EvalState.Break)
+                            {
+                                break;
+                            }
+                            else if (bodyState == EvalState.Return)
+                            {
+                                state = EvalState.Return;
+                                break;
+                            }
+                        }
+                    }
+
+                    return result;
+                });
         }
 
         public override IEnumerable<Syntax> TreeEnumerate()

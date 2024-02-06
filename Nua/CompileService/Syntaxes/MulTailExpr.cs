@@ -16,31 +16,6 @@ namespace Nua.CompileService.Syntaxes
             NextTailExpr = nextTailExpr;
         }
 
-        public NuaValue? Evaluate(NuaContext context, double leftValue)
-        {
-            var rightValue = RightExpr.Evaluate(context);
-
-            if (rightValue == null)
-                throw new NuaEvalException("Unable to plus on a null value");
-            if (rightValue is not NuaNumber rightNumber)
-                throw new NuaEvalException("Unable to plus on a non-number value");
-
-            var result = Operation switch
-            {
-                MulOperation.Mul => leftValue * rightNumber.Value,
-                MulOperation.Div => leftValue / rightNumber.Value,
-                MulOperation.Pow => Math.Pow(leftValue, rightNumber.Value),
-                MulOperation.Mod => leftValue % rightNumber.Value,
-                MulOperation.DivInt => Math.Floor(leftValue / rightNumber.Value),
-                _ => leftValue * rightNumber.Value
-            };
-
-            if (NextTailExpr != null)
-                return NextTailExpr.Evaluate(context, result);
-
-            return new NuaNumber(result);
-        }
-
         public NuaValue? Evaluate(NuaContext context, NuaValue? left)
         {
             var rightValue = RightExpr.Evaluate(context);
@@ -60,13 +35,119 @@ namespace Nua.CompileService.Syntaxes
 
             return result;
         }
-
         public NuaValue? Evaluate(NuaContext context, Expr left)
         {
             return Evaluate(context, left.Evaluate(context));
         }
 
+        public CompiledSyntax Compile(CompiledSyntax compiledLeft)
+        {
+            var compiledRight = RightExpr.Compile();
+
+            CompiledSyntax result = Operation switch
+            {
+                MulOperation.Div => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalDivide(left, right);
+                })
+                ,
+                MulOperation.Pow => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalPower(left, right);
+                })
+                ,
+                MulOperation.Mod => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalMod(left, right);
+                })
+                ,
+                MulOperation.DivInt => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalDivideInt(left, right);
+                })
+                ,
+                MulOperation.Mul or _ => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalMultiply(left, right);
+                })
+            };
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
+        public CompiledSyntax Compile(Expr leftExpr)
+        {
+            var compiledLeft = leftExpr.Compile();
+            var compiledRight = RightExpr.Compile();
+
+            CompiledSyntax result = Operation switch
+            {
+                MulOperation.Div => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalDivide(left, right);
+                })
+                ,
+                MulOperation.Pow => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalPower(left, right);
+                })
+                ,
+                MulOperation.Mod => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalMod(left, right);
+                })
+                ,
+                MulOperation.DivInt => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalDivideInt(left, right);
+                })
+                ,
+                MulOperation.Mul or _ => CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var left = compiledLeft.Evaluate(context);
+                    var right = compiledRight.Evaluate(context);
+
+                    return EvalUtilities.EvalMultiply(left, right);
+                })
+            };
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
+
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailExpr? expr)
         {

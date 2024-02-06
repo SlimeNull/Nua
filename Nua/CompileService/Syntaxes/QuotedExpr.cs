@@ -14,6 +14,8 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => ValueExpr.Evaluate(context);
 
+        public override CompiledSyntax Compile() => ValueExpr.Compile();
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

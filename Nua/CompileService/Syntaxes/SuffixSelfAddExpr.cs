@@ -16,6 +16,8 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context)
         {
+            var addValue = !Negative ? 1 : 0;
+
             if (SelfExpr is ValueAccessExpr memberAccessExpr)
             {
                 var self = memberAccessExpr.Evaluate(context);
@@ -25,11 +27,7 @@ namespace Nua.CompileService.Syntaxes
                 if (self is not NuaNumber number)
                     throw new NuaEvalException("Unable to apply self-increment on a non-number value");
 
-                var newValue = !Negative ?
-                    new NuaNumber(number.Value + 1) :
-                    new NuaNumber(number.Value - 1);
-
-                memberAccessExpr.SetMemberValue(context, newValue);
+                number.Value += addValue;
                 return self;
             }
             else if (SelfExpr is VariableExpr variableExpr)
@@ -41,16 +39,53 @@ namespace Nua.CompileService.Syntaxes
                 if (self is not NuaNumber number)
                     throw new NuaEvalException("Unable to apply self-increment on a non-number value");
 
-                var newValue = !Negative ?
-                    new NuaNumber(number.Value + 1) :
-                    new NuaNumber(number.Value - 1);
-
-                variableExpr.SetValue(context, newValue);
+                number.Value += addValue;
                 return self;
             }
             else
             {
-                throw new NuaEvalException("Only Dictionary member and Variable can be increased");
+                throw new NuaEvalException("Only Table member, List element and Variable can be increased");
+            }
+        }
+
+        public override CompiledSyntax Compile()
+        {
+            var compiledSelf = SelfExpr.Compile();
+            var addValue = !Negative ? 1 : 0;
+
+            if (SelfExpr is ValueAccessExpr memberAccessExpr)
+            {
+                return CompiledSyntax.CreateFromDelegate(context =>
+                {
+                    var self = compiledSelf.Evaluate(context);
+
+                    if (self == null)
+                        throw new NuaEvalException("Unable to apply self-increment on a null value");
+                    if (self is not NuaNumber number)
+                        throw new NuaEvalException("Unable to apply self-increment on a non-number value");
+
+                    number.Value += addValue;
+                    return self;
+                });
+            }
+            else if (SelfExpr is VariableExpr variableExpr)
+            {
+                return CompiledSyntax.CreateFromDelegate(context =>
+                {
+                    var self = compiledSelf.Evaluate(context);
+
+                    if (self == null)
+                        throw new NuaEvalException("Unable to apply self-increment on a null value");
+                    if (self is not NuaNumber number)
+                        throw new NuaEvalException("Unable to apply self-increment on a non-number value");
+
+                    number.Value += addValue;
+                    return self;
+                });
+            }
+            else
+            {
+                throw new NuaCompileException("Only Table member, List element and Variable can be increased");
             }
         }
 

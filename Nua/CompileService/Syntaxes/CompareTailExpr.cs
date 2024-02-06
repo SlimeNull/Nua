@@ -18,29 +18,50 @@ namespace Nua.CompileService.Syntaxes
 
         public NuaValue? Evaluate(NuaContext context, NuaValue? leftValue)
         {
-            if (leftValue is not NuaNumber leftNumber)
-                throw new NuaEvalException("Unable to compare on a non-number value");
-            if (RightExpr.Evaluate(context) is not NuaNumber rightNumber)
-                throw new NuaEvalException("Unable to compare on a non-number value");
+            NuaValue? rightValue = RightExpr.Evaluate(context);
 
-            bool result = Operation switch
+            NuaValue? result = Operation switch
             {
-                CompareOperation.LessThan => leftNumber.Value < rightNumber.Value,
-                CompareOperation.GreaterThan => leftNumber.Value > rightNumber.Value,
-                CompareOperation.LessEqual => leftNumber.Value <= rightNumber.Value,
-                CompareOperation.GreaterEqual => leftNumber.Value >= rightNumber.Value,
-                _ => leftNumber.Value < rightNumber.Value,
+                CompareOperation.LessThan => EvalUtilities.EvalLessThan(leftValue, rightValue),
+                CompareOperation.GreaterThan => EvalUtilities.EvalGreaterThan(leftValue, rightValue),
+                CompareOperation.LessEqual => EvalUtilities.EvalLessEqual(leftValue, rightValue),
+                CompareOperation.GreaterEqual => EvalUtilities.EvalGreaterEqual(leftValue, rightValue),
+                _ => null,
             };
 
-            return new NuaBoolean(result);
-        }
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Evaluate(context, result);
 
+            return result;
+        }
         public NuaValue? Evaluate(NuaContext context, Expr left)
         {
             return Evaluate(context, left.Evaluate(context));
         }
 
+        public CompiledSyntax Compile(CompiledSyntax compiledLeft)
+        {
+            var compiledRight = RightExpr.Compile();
+
+            var result = Operation switch
+            {
+                CompareOperation.LessThan => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalLessThan(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                CompareOperation.GreaterThan => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalGreaterThan(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                CompareOperation.LessEqual => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalLessEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                CompareOperation.GreaterEqual => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalGreaterEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                _ => throw new Exception("Invalid compare operation")
+            };
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
+        public CompiledSyntax Compile(Expr leftExpr)
+            => Compile(leftExpr.Compile());
+
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailExpr? expr)
         {

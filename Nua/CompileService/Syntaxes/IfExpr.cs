@@ -18,21 +18,13 @@ namespace Nua.CompileService.Syntaxes
             ElseExpr = elseExpr;
         }
 
-        public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
+        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
-            bool condition = NuaUtilities.ConditionTest(ConditionExpr.Evaluate(context));
+            state = EvalState.None;
 
-            if (condition)
+            if (NuaUtilities.ConditionTest(ConditionExpr.Evaluate(context)))
             {
-                executed = true;
-
-                if (BodyExpr == null)
-                {
-                    state = EvalState.None;
-                    return null;
-                }
-
-                return BodyExpr.Evaluate(context, out state);
+                return BodyExpr?.Evaluate(context, out state);
             }
             else
             {
@@ -40,32 +32,50 @@ namespace Nua.CompileService.Syntaxes
                 {
                     foreach (var elseif in ElseIfExpressions)
                     {
-                        var value = elseif.Evaluate(context, out var elseIfExecuted, out var elseIfState);
-
-                        if (elseIfExecuted)
+                        if (EvalUtilities.ConditionTest(elseif.ConditionExpr.Evaluate(context)))
                         {
-                            executed = true;
-                            state = elseIfState;
-                            return value;
+                            return elseif.BodyExpr?.Evaluate(context, out state);
                         }
                     }
                 }
 
-                if (ElseExpr != null)
-                {
-                    executed = true;
-                    return ElseExpr.Evaluate(context, out state);
-                }
-
-                executed = false;
-                state = EvalState.None;
-                return null;
+                return ElseExpr?.BodyExpr?.Evaluate(context, out state);
             }
         }
 
-        public override NuaValue? Evaluate(NuaContext context, out EvalState state)
+        public override CompiledProcessSyntax Compile()
         {
-            return Evaluate(context, out _, out state);
+            CompiledSyntax compiledCondition = ConditionExpr.Compile();
+            CompiledProcessSyntax? compiledBody = BodyExpr?.Compile();
+
+            List<(CompiledSyntax Condition, CompiledProcessSyntax? Body)> compiledElseIfSyntaxes = new();
+            CompiledProcessSyntax? compiledElseBody = ElseExpr?.BodyExpr?.Compile() as CompiledProcessSyntax;
+
+            if (ElseIfExpressions is not null)
+                foreach (var elseif in ElseIfExpressions)
+                    compiledElseIfSyntaxes.Add((elseif.ConditionExpr.Compile(), elseif.BodyExpr?.Compile()));
+
+            return CompiledProcessSyntax.CreateFromDelegate(
+                delegate (NuaContext context, out EvalState state)
+                {
+                    state = EvalState.None;
+                    if (EvalUtilities.ConditionTest(compiledCondition.Evaluate(context)))
+                    {
+                        return compiledBody?.Evaluate(context, out state);
+                    }
+                    else
+                    {
+                        foreach (var compiledElseIf in compiledElseIfSyntaxes)
+                        {
+                            if (EvalUtilities.ConditionTest(compiledElseIf.Condition.Evaluate(context)))
+                            {
+                                return compiledElseIf.Body?.Evaluate(context, out state);
+                            }
+                        }
+
+                        return compiledElseBody?.Evaluate(context, out state);
+                    }
+                });
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)

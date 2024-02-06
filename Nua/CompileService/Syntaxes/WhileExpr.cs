@@ -20,10 +20,59 @@ namespace Nua.CompileService.Syntaxes
             NuaValue? result = null;
             while (NuaUtilities.ConditionTest(ConditionExpr.Evaluate(context)))
             {
-                result = BodyExpr?.Evaluate(context);
+                EvalState bodyState = EvalState.None;
+                result = BodyExpr?.Evaluate(context, out bodyState);
+
+                if (bodyState == EvalState.Continue)
+                {
+                    continue;
+                }
+                else if (bodyState == EvalState.Break)
+                {
+                    break;
+                }
+                else if (bodyState == EvalState.Return)
+                {
+                    state = EvalState.Return;
+                    break;
+                }
             }
 
             return result;
+        }
+
+        public override CompiledProcessSyntax Compile()
+        {
+            var compiledCondition = ConditionExpr.Compile();
+            var compiledBody = BodyExpr?.Compile();
+
+            return CompiledProcessSyntax.CreateFromDelegate(
+                delegate (NuaContext context, out EvalState state)
+                {
+                    NuaValue? result = null;
+                    state = EvalState.None;
+                    while (EvalUtilities.ConditionTest(compiledCondition.Evaluate(context)))
+                    {
+                        EvalState bodyState = EvalState.None;
+                        result = BodyExpr?.Evaluate(context, out bodyState);
+
+                        if (bodyState == EvalState.Continue)
+                        {
+                            continue;
+                        }
+                        else if (bodyState == EvalState.Break)
+                        {
+                            break;
+                        }
+                        else if (bodyState == EvalState.Return)
+                        {
+                            state = EvalState.Return;
+                            break;
+                        }
+                    }
+
+                    return result;
+                });
         }
 
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)

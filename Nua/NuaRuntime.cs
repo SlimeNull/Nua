@@ -35,8 +35,9 @@ namespace Nua
                 try
                 {
                     var expr = Parser.ParseMulti(tokens);
+                    var compiled = expr.Compile();
 
-                    return expr.Evaluate(Context);
+                    return compiled.Evaluate(Context);
                 }
                 catch (NuaParseException parseException) when (parseException.Status.RequireMoreTokens)
                 {
@@ -58,8 +59,9 @@ namespace Nua
             var reader = new StringReader(expression);
             var tokens = Lexer.Lex(reader).ToArray();
             var multiExpr = Parser.ParseMulti(tokens);
+            var compiled = multiExpr.Compile();
 
-            var result = multiExpr.Evaluate(Context);
+            var result = compiled.Evaluate(Context);
 
             return result;
         }

@@ -30,6 +30,17 @@ namespace Nua.CompileService.Syntaxes
         public override NuaValue? Evaluate(NuaContext context)
             => new NuaNativeFunction(BodyExpr, ParameterNames.ToArray());
 
+        public override CompiledSyntax Compile()
+        {
+            CompiledProcessSyntax? compiledBody = BodyExpr?.Compile();
+            NuaCompiledNativeFunction? bufferedValue = null;
+
+            return CompiledSyntax.CreateFromDelegate(context =>
+            {
+                return bufferedValue ??= new NuaCompiledNativeFunction(compiledBody, ParameterNames.ToArray());
+            });
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

@@ -5,6 +5,7 @@ namespace Nua.CompileService.Syntaxes
     public abstract class Syntax
     {
         public abstract NuaValue? Evaluate(NuaContext context);
+        public abstract CompiledSyntax Compile();
 
         protected static bool TokenMatch(IList<Token> tokens, bool required, TokenKind requiredTokenKind, ref int index, out bool requireToken, out Token token)
         {

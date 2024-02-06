@@ -19,6 +19,17 @@ namespace Nua.CompileService.Syntaxes
             return context.Get(VariableName);
         }
 
+        public override CompiledProcessSyntax Compile()
+        {
+            return CompiledProcessSyntax.CreateFromDelegate(
+                delegate (NuaContext context, out EvalState state)
+                {
+                    context.TagGlobal(VariableName);
+                    state = EvalState.None;
+                    return context.Get(VariableName);
+                });
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

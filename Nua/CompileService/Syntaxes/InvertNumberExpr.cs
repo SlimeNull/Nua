@@ -24,6 +24,23 @@ namespace Nua.CompileService.Syntaxes
             return new NuaNumber(-number.Value);
         }
 
+        public override CompiledSyntax Compile()
+        {
+            CompiledSyntax compiledValue = ValueExpr.Compile();
+
+            return CompiledSyntax.CreateFromDelegate(context =>
+            {
+                var value = compiledValue.Evaluate(context);
+
+                if (value == null)
+                    throw new NuaEvalException("Unable to take negation of null value");
+                if (value is not NuaNumber number)
+                    throw new NuaEvalException("Unable to take negation of non-number value");
+
+                return new NuaNumber(-number.Value);
+            });
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

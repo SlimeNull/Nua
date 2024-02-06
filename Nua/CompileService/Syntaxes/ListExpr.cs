@@ -65,5 +65,26 @@ namespace Nua.CompileService.Syntaxes
                     foreach (var syntax in expr.TreeEnumerate())
                         yield return syntax;
         }
+
+        public override CompiledSyntax Compile()
+        {
+            List<CompiledSyntax> compiledItems = new();
+            foreach (var valueExpr in ValueExpressions)
+                compiledItems.Add(valueExpr.Compile());
+
+            NuaList? bufferedValue = null;
+
+            return CompiledSyntax.CreateFromDelegate((context) =>
+            {
+                if (bufferedValue == null)
+                {
+                    bufferedValue = new();
+                    foreach (var compiledItem in compiledItems)
+                        bufferedValue.Storage.Add(compiledItem.Evaluate(context));
+                }
+
+                return bufferedValue;
+            });
+        }
     }
 }

@@ -23,6 +23,22 @@ namespace Nua.CompileService.Syntaxes
             return value;
         }
 
+        public override CompiledSyntax Compile()
+        {
+            List<CompiledSyntax> compiledSyntaxes = new(Expressions.Count);
+            foreach (var expr in Expressions)
+                compiledSyntaxes.Add(expr.Compile());
+
+            return CompiledSyntax.CreateFromDelegate((context) =>
+            {
+                NuaValue? result = null;
+                foreach (var compiledSyntax in compiledSyntaxes)
+                    result = compiledSyntax.Evaluate(context);
+
+                return result;
+            });
+        }
+
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ChainExpr? expr)
         {
             parseStatus = new();

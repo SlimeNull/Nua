@@ -23,9 +23,8 @@ namespace Nua.CompileService.Syntaxes
 
             NuaValue? result = Operation switch
             {
-                AddOperation.Add => EvalUtilities.EvalPlus(left, rightValue),
                 AddOperation.Min => EvalUtilities.EvalMinus(left, rightValue),
-                _ => EvalUtilities.EvalPlus(left, rightValue)
+                AddOperation.Add or _ => EvalUtilities.EvalPlus(left, rightValue),
             };
 
             if (NextTailExpr is not null)
@@ -33,13 +32,31 @@ namespace Nua.CompileService.Syntaxes
 
             return result;
         }
-
-        public NuaValue? Evaluate(NuaContext context, Expr left)
+        public NuaValue? Evaluate(NuaContext context, Expr leftExpr)
         {
-            return Evaluate(context, left.Evaluate(context));
+            return Evaluate(context, leftExpr.Evaluate(context));
         }
 
+        public CompiledSyntax Compile(CompiledSyntax compiledLeft)
+        {
+            var compiledRight = RightExpr.Compile();
+
+            CompiledSyntax result = Operation switch
+            {
+                AddOperation.Min => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalMinus(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                AddOperation.Add or _ => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalPlus(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+            };
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
+        public CompiledSyntax Compile(Expr leftExpr)
+            => Compile(leftExpr.Compile());
+
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AddTailExpr? expr)
         {

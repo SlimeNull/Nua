@@ -29,7 +29,6 @@ namespace Nua.CompileService.Syntaxes
         {
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to access member of a null value");
-
             if (valueToAccess is not NuaTable table)
                 throw new NuaEvalException("Unable to access member of non-table value");
 
@@ -42,7 +41,28 @@ namespace Nua.CompileService.Syntaxes
             return value;
         }
 
-        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
+        {
+            CompiledSyntax result = CompiledSyntax.CreateFromDelegate(context =>
+            {
+                var valueToAccess = compiledValueToAccess.Evaluate(context);
+
+                if (valueToAccess == null)
+                    throw new NuaEvalException("Unable to access member of a null value");
+                if (valueToAccess is not NuaTable table)
+                    throw new NuaEvalException("Unable to access member of non-table value");
+
+                var key = new NuaString(Name);
+                var value = table.Get(key);
+
+                return value;
+            });
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
         {

@@ -39,6 +39,36 @@ namespace Nua.CompileService.Syntaxes
             return value;
         }
 
+        public override CompiledProcessSyntax Compile()
+        {
+            List<CompiledSyntax> compiledSyntaxes = new(Expressions.Count);
+            foreach (var expr in Expressions)
+                compiledSyntaxes.Add(expr.Compile());
+
+            return CompiledProcessSyntax.CreateFromDelegate(
+                delegate (NuaContext context, out EvalState state)
+                {
+                    NuaValue? value = null;
+                    state = EvalState.None;
+                    foreach (var compiledSyntax in compiledSyntaxes)
+                    {
+                        if (compiledSyntax is CompiledProcessSyntax compiledProcessSyntax)
+                        {
+                            value = compiledProcessSyntax.Evaluate(context, out state);
+
+                            if (state != EvalState.None)
+                                return value;
+                        }
+                        else
+                        {
+                            value = compiledSyntax.Evaluate(context);
+                        }
+                    }
+
+                    return value;
+                });
+        }
+
         public override NuaValue? Evaluate(NuaContext context)
         {
             return Evaluate(context, out _);
@@ -53,6 +83,9 @@ namespace Nua.CompileService.Syntaxes
             int cursor = index;
             while (Expr.Match(tokens, required, ref cursor, out parseStatus, out var oneExpr))
                 expressions.Add(oneExpr);
+
+            if (parseStatus.Intercept)
+                return false;
 
             if (expressions.Count == 0)
                 return false;

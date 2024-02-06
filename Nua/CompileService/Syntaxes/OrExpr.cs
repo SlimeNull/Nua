@@ -49,6 +49,21 @@ namespace Nua.CompileService.Syntaxes
             return true;
         }
 
+        public override CompiledSyntax Compile()
+        {
+            var compiledLeft = LeftExpr.Compile();
+            var compiledTail = TailExpr.Compile();
+
+            return CompiledSyntax.CreateFromDelegate((context) =>
+            {
+                var right = compiledLeft.Evaluate(context);
+                if (EvalUtilities.ConditionTest(right))
+                    return right;
+                else
+                    return compiledTail.Evaluate(context);
+            });
+        }
+
         public override IEnumerable<Syntax> TreeEnumerate()
         {
             foreach (var syntax in base.TreeEnumerate())

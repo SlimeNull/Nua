@@ -16,23 +16,45 @@ namespace Nua.CompileService.Syntaxes
             NextTailExpr = nextTailExpr;
         }
 
-        public NuaValue Evaluate(NuaContext context, NuaValue? leftValue)
+        public NuaValue? Evaluate(NuaContext context, NuaValue? leftValue)
         {
             var rightValue = RightExpr.Evaluate(context);
 
-            var result = Operation switch
+            NuaValue? result = Operation switch
             {
-                EqualOperation.Equal => Object.Equals(leftValue, rightValue),
-                EqualOperation.NotEqual => !Object.Equals(leftValue, rightValue),
-                _ => false
+                EqualOperation.Equal => EvalUtilities.EvalEqual(leftValue, rightValue),
+                EqualOperation.NotEqual => EvalUtilities.EvalNotEqual(leftValue, rightValue),
+                _ => null
             };
 
-            return new NuaBoolean(result);
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Evaluate(context, result);
+
+            return result;
         }
 
-        public NuaValue Evaluate(NuaContext context, Expr expr) => Evaluate(context, expr.Evaluate(context));
+        public NuaValue? Evaluate(NuaContext context, Expr leftExpr) => Evaluate(context, leftExpr.Evaluate(context));
+
+        public CompiledSyntax Compile(CompiledSyntax compiledLeft)
+        {
+            var compiledRight = RightExpr.Compile();
+
+            CompiledSyntax result = Operation switch
+            {
+                EqualOperation.Equal => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                EqualOperation.NotEqual => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalNotEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                _ => throw new InvalidOperationException("Invalid equal operation")
+            };
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
+
+            return result;
+        }
+        public CompiledSyntax Compile(Expr leftExpr) => Compile(leftExpr.Compile());
 
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailExpr? expr)
         {

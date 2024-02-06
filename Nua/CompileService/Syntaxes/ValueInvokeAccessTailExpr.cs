@@ -18,7 +18,6 @@ namespace Nua.CompileService.Syntaxes
         {
             if (valueToAccess == null)
                 throw new NuaEvalException("Unable to invoke a null value");
-
             if (valueToAccess is not NuaFunction function)
                 throw new NuaEvalException("Unable to invoke a non-function value");
 
@@ -30,6 +29,36 @@ namespace Nua.CompileService.Syntaxes
 
             if (NextTailExpr != null)
                 result = NextTailExpr.Evaluate(context, result);
+
+            return result;
+        }
+
+        public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
+        {
+            List<CompiledSyntax> compiledParameters = new(ParameterExpressions.Count);
+            foreach (var paramterExpr in ParameterExpressions)
+                compiledParameters.Add(paramterExpr.Compile());
+
+            CompiledSyntax result = CompiledSyntax.CreateFromDelegate(context =>
+            {
+                var valueToAccess = compiledValueToAccess.Evaluate(context);
+
+                if (valueToAccess == null)
+                    throw new NuaEvalException("Unable to invoke a null value");
+                if (valueToAccess is not NuaFunction function)
+                    throw new NuaEvalException("Unable to invoke a non-function value");
+
+                NuaValue?[] parameterValues = compiledParameters
+                    .Select(p => p.Evaluate(context))
+                    .ToArray();
+
+                var result = function.Invoke(context, parameterValues);
+
+                return result;
+            });
+
+            if (NextTailExpr is not null)
+                result = NextTailExpr.Compile(result);
 
             return result;
         }

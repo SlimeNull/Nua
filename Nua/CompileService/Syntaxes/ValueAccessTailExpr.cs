@@ -14,9 +14,12 @@ namespace Nua.CompileService.Syntaxes
 
         public NuaValue? Evaluate(NuaContext context, Expr expr)
         {
-            var valueToAccess = expr.Evaluate(context);
+            return Evaluate(context, expr.Evaluate(context));
+        }
 
-            return Evaluate(context, valueToAccess);
+        public CompiledSyntax Compile(Expr valueToAccessExpr)
+        {
+            return Compile(valueToAccessExpr.Compile());
         }
 
         public void SetMemberValue(NuaContext context, NuaValue valueToAccess, NuaValue? newMemberValue)
@@ -94,7 +97,9 @@ namespace Nua.CompileService.Syntaxes
         }
 
         public abstract NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess);
+        public abstract CompiledSyntax Compile(CompiledSyntax compiledValueToAccess);
         public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
         {

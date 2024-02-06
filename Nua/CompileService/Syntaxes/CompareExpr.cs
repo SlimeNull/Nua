@@ -20,6 +20,11 @@ namespace Nua.CompileService.Syntaxes
             return TailExpr.Evaluate(context, LeftExpr);
         }
 
+        public override CompiledSyntax Compile()
+        {
+            return TailExpr.Compile(LeftExpr);
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

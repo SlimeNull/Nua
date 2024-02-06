@@ -16,7 +16,7 @@ namespace Nua.CompileService.Syntaxes
             NextTailExpr = nextTailExpr;
         }
 
-        public NuaValue? Evaluate(NuaContext context, Expr left)
+        public NuaValue? Evaluate(NuaContext context, Expr leftExpr)
         {
             NuaValue? toAssign = null;
             if (NextTailExpr == null)
@@ -26,18 +26,18 @@ namespace Nua.CompileService.Syntaxes
 
             var newValue = Operation switch
             {
-                AssignOperation.AddWith =>  EvalUtilities.EvalPlus(left.Evaluate(context), toAssign),
-                AssignOperation.MinWith =>  EvalUtilities.EvalMinus(left.Evaluate(context), toAssign),
+                AssignOperation.AddWith =>  EvalUtilities.EvalPlus(leftExpr.Evaluate(context), toAssign),
+                AssignOperation.MinWith =>  EvalUtilities.EvalMinus(leftExpr.Evaluate(context), toAssign),
                 AssignOperation.Assign => toAssign,
                 _ => toAssign,
             };
 
-            if (left is ValueAccessExpr valueAccessExpr)
+            if (leftExpr is ValueAccessExpr valueAccessExpr)
             {
                 valueAccessExpr.SetMemberValue(context, newValue);
                 return newValue;
             }
-            else if (left is VariableExpr variableExpr)
+            else if (leftExpr is VariableExpr variableExpr)
             {
                 variableExpr.SetValue(context, newValue);
                 return newValue;
@@ -47,11 +47,51 @@ namespace Nua.CompileService.Syntaxes
                 throw new NuaEvalException("Only Value member or Variable can be assigned");
             }
         }
-
-        public override NuaValue? Evaluate(NuaContext context)
+        public CompiledSyntax Compile(Expr leftExpr)
         {
-            throw new InvalidOperationException();
+            CompiledSyntax compiledLeft = leftExpr.Compile();
+            CompiledSyntax compiledToAssign;
+            if (NextTailExpr == null)
+                compiledToAssign = RightExpr.Compile();
+            else
+                compiledToAssign = NextTailExpr.Compile(RightExpr);
+
+            CompiledSyntax compiledNewValue = Operation switch
+            {
+                AssignOperation.AddWith => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalPlus(compiledLeft.Evaluate(context), compiledToAssign.Evaluate(context))),
+                AssignOperation.MinWith => CompiledSyntax.CreateFromDelegate((context) => EvalUtilities.EvalMinus(compiledLeft.Evaluate(context), compiledToAssign.Evaluate(context))),
+                AssignOperation.Assign or _ => CompiledSyntax.CreateFromDelegate((context) => compiledToAssign.Evaluate(context)),
+            };
+
+
+            if (leftExpr is ValueAccessExpr valueAccessExpr)
+            {
+                return CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var newValue = compiledNewValue.Evaluate(context);
+                    valueAccessExpr.SetMemberValue(context, compiledNewValue.Evaluate(context));
+
+                    return newValue;
+                });
+            }
+            else if (leftExpr is VariableExpr variableExpr)
+            {
+                return CompiledSyntax.CreateFromDelegate((context) =>
+                {
+                    var newValue = compiledNewValue.Evaluate(context);
+                    variableExpr.SetValue(context, newValue);
+
+                    return newValue;
+                });
+            }
+            else
+            {
+                throw new NuaCompileException("Only Value member or Variable can be assigned");
+            }
         }
+
+        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
+        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailExpr? expr)
         {

@@ -20,6 +20,8 @@ namespace Nua.CompileService.Syntaxes
 
         public override NuaValue? Evaluate(NuaContext context) => ValueExpr.Evaluate(context);
 
+        public override CompiledSyntax Compile() => ValueExpr.Compile();
+
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out TableMemberExpr? expr)
         {
             parseStatus = new();

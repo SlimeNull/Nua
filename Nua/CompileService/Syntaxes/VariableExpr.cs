@@ -25,6 +25,8 @@ namespace Nua.CompileService.Syntaxes
 
 
         public override NuaValue? Evaluate(NuaContext context) => context.Get(Name);
+        public override CompiledSyntax Compile() => CompiledSyntax.CreateFromDelegate(context => context.Get(Name));
+
         public void SetValue(NuaContext context, NuaValue? newValue)
         {
             context.Set(Name, newValue);

@@ -15,9 +15,14 @@ namespace Nua.CompileService.Syntaxes
             TailExpr = tailExpr;
         }
 
+
         public override NuaValue? Evaluate(NuaContext context)
         {
             return TailExpr.Evaluate(context, ValueExpr);
+        }
+        public override CompiledSyntax Compile()
+        {
+            return TailExpr.Compile(ValueExpr);
         }
 
         public void SetMemberValue(NuaContext context, NuaValue? value)

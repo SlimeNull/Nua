@@ -18,6 +18,11 @@ namespace Nua.CompileService.Syntaxes
             return ValueExpr?.Evaluate(context);
         }
 
+        public override CompiledProcessSyntax Compile()
+        {
+            return CompiledProcessSyntax.Create(ValueExpr?.Compile(), EvalState.Return);
+        }
+
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();

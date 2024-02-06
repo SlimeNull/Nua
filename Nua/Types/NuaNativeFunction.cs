@@ -1,19 +1,18 @@
-﻿
-using Nua.CompileService.Syntaxes;
+﻿using Nua.CompileService.Syntaxes;
 
 namespace Nua.Types
 {
     public class NuaNativeFunction : NuaFunction
     {
-        public override IReadOnlyList<string> ParameterNames => _parameterNames.AsReadOnly();
-
-        protected readonly string[] _parameterNames;
-
         public NuaNativeFunction(MultiExpr? body, params string[] parameterNames)
         {
             Body = body;
             _parameterNames = parameterNames;
         }
+
+        public override IReadOnlyList<string> ParameterNames => _parameterNames.AsReadOnly();
+
+        protected readonly string[] _parameterNames;
 
         public MultiExpr? Body { get; }
 

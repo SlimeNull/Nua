@@ -13,6 +13,7 @@ namespace Nua.CompileService.Syntaxes
         public ChainExpr ChainExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context) => ChainExpr.Evaluate(context);
+        public override CompiledSyntax Compile() => ChainExpr.Compile();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out QuotedChainExpr? expr)
         {
