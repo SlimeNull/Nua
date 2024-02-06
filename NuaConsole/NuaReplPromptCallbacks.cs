@@ -154,67 +154,58 @@ namespace NuaConsole
 
             var keyChar = keyPress.ConsoleKeyInfo.KeyChar;
 
-            if (caret > 0)
+            if (keyChar is '{' or '[' or '(' or '}' or ']' or ')')
             {
-                switch (keyChar)
+                StringBuilder result = new();
+                StringBuilder spaceBuffer = new();
+                int newCaret = -1;
+
+                bool inSpaceAfterNewLine = false;
+                for (int i = 0; i < text.Length; i++)
                 {
-                    case '{' or '}':
+                    char ch = text[i];
+
+                    if (inSpaceAfterNewLine)
                     {
-                        StringBuilder result = new();
-                        StringBuilder spaceBuffer = new();
-                        int newCaret = -1;
-
-                        bool inSpaceAfterNewLine = false;
-                        for (int i = 0; i < text.Length; i++)
+                        if (!char.IsWhiteSpace(ch) || ch == '\n')
                         {
-                            char ch = text[i];
+                            int indentLevel = GetSmartIndentationLevel(text, i);
 
-                            if (inSpaceAfterNewLine)
-                            {
-                                if (!char.IsWhiteSpace(ch) || ch == '\n')
-                                {
-                                    int indentLevel = GetSmartIndentationLevel(text, i);
+                            if (ch is '}' or ']' or ')')
+                                indentLevel -= 1;
 
-                                    if (ch == '}')
-                                        indentLevel -= 1;
+                            if (indentLevel < 0)
+                                indentLevel = 0;
 
-                                    if (indentLevel < 0)
-                                        indentLevel = 0;
+                            result.Append(' ', _tabSize * indentLevel);
+                            inSpaceAfterNewLine = false;
+                            result.Append(ch);
 
-                                    result.Append(' ', _tabSize * indentLevel);
-                                    inSpaceAfterNewLine = false;
-                                    result.Append(ch);
-
-                                    _lexParseOk = spaceBuffer == result;
-                                }
-
-                                spaceBuffer.Append(ch);
-                            }
-                            else
-                            {
-                                if (ch == '\n')
-                                {
-                                    inSpaceAfterNewLine = true;
-                                    spaceBuffer.Clear();
-                                }
-
-                                result.Append(ch);
-                            }
-
-                            if (i == caret)
-                                newCaret = result.Length - 1;
+                            _lexParseOk = spaceBuffer == result;
                         }
 
-                        if (newCaret == -1)
-                            newCaret = result.Length;
-
-                        text = result.ToString();
-                        caret = newCaret;
-                        break;
+                        spaceBuffer.Append(ch);
                     }
-                    default:
-                        break;
+                    else
+                    {
+                        if (ch == '\n')
+                        {
+                            inSpaceAfterNewLine = true;
+                            spaceBuffer.Clear();
+                        }
+
+                        result.Append(ch);
+                    }
+
+                    if (i == caret)
+                        newCaret = result.Length - 1;
                 }
+
+                if (newCaret == -1)
+                    newCaret = result.Length;
+
+                text = result.ToString();
+                caret = newCaret;
             }
 
             return base.FormatInput(text, caret, keyPress, cancellationToken);
@@ -371,9 +362,9 @@ namespace NuaConsole
             for (int i = 0; i < end; i++)
             {
                 var c = text[i];
-                if (c == '{')
+                if (c is '{' or '[' or '(')
                     ++openBraces;
-                if (c == '}')
+                if (c is '}' or ']' or ')')
                     --openBraces;
             }
             return openBraces;
