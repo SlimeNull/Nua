@@ -149,6 +149,9 @@ namespace Nua.CompileService.Syntaxes
             foreach (var syntax in base.TreeEnumerate())
                 yield return syntax;
 
+            foreach (var syntax in ConditionExpr.TreeEnumerate())
+                yield return syntax;
+
             if (BodyExpr is not null)
                 foreach (var syntax in BodyExpr.TreeEnumerate())
                     yield return syntax;
