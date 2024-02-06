@@ -117,7 +117,7 @@ namespace Nua.CompileService
 
                     continue;
                 }
-                else if (char.IsDigit(cch))
+                else if (char.IsAsciiDigit(cch))
                 {
                     int tokenLn = ln;
                     int tokenCol = col - 1;
@@ -166,14 +166,14 @@ namespace Nua.CompileService
                         ReadAndRise();  // skip 'e'
                         sb.Append(cch);
 
-                        ch = ReadAndRise();
+                        ch = reader.Peek();
                         if (ch >= '0' || ch <= '9' || ch == '+' || ch == '-')
                         {
-                            ReadAndRise();
                             sb.Append((char)ch);
+                            ReadAndRise();
                         }
 
-                        while (ch != -1)
+                        while (true)
                         {
                             ch = reader.Peek();
                             cch = (char)ch;
@@ -189,7 +189,12 @@ namespace Nua.CompileService
                         }
                     }
 
-                    yield return new Token(TokenKind.Number, sb.ToString(), startIndex, index, tokenLn, tokenCol);
+                    string numberStr = sb.ToString();
+
+                    if (!double.TryParse(numberStr, out _))
+                        throw new NuaLexException("Invalid number");
+
+                    yield return new Token(TokenKind.Number, numberStr, startIndex, index, tokenLn, tokenCol);
                     continue;
                 }
                 else if (cch == '"')
