@@ -20,7 +20,6 @@ namespace Nua.CompileService.Syntaxes
             if (!TokenMatch(tokens, required, TokenKind.KwdBreak, ref index, out parseStatus.RequireMoreTokens, out _))
                 return false;
 
-            index++;
             expr = new BreakExpr();
             return true;
         }
