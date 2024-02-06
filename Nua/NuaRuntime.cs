@@ -18,6 +18,7 @@ namespace Nua
             Context.SetGlobal("table", TableOperations.Create());
             Context.SetGlobal("list", ListOperations.Create());
             Context.SetGlobal("math", MathOperations.Create());
+            Context.SetGlobal("nua", CoreOperations.Create());
         }
 
         public NuaValue? Evaluate(TextReader expressionReader)

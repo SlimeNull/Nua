@@ -7,8 +7,7 @@ using Nua.Types;
 
 namespace Nua.Stdlib
 {
-
-    public class TableOperations : NuaNativeTable
+    public class TableOperations : StandardModuleTable
     {
         private TableOperations() { }
 
@@ -18,7 +17,7 @@ namespace Nua.Stdlib
             {
                 Storage =
                 {
-
+                    
                 }
             };
         }

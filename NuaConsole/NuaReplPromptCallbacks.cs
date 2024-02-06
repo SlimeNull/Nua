@@ -1,20 +1,28 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text;
+using Nua;
 using Nua.CompileService;
 using Nua.CompileService.Syntaxes;
+using Nua.Stdlib;
+using Nua.Types;
 using PrettyPrompt;
+using PrettyPrompt.Completion;
 using PrettyPrompt.Consoles;
+using PrettyPrompt.Documents;
 using PrettyPrompt.Highlighting;
+using static System.Net.Mime.MediaTypeNames;
 using static PrettyPrompt.Highlighting.FormattedString.TextElementsEnumerator;
 
 namespace NuaConsole
 {
     public class NuaReplPromptCallbacks : PromptCallbacks
     {
+        private readonly NuaContext _scriptContext;
         private readonly int _tabSize;
 
-        public NuaReplPromptCallbacks(int tabSize = 2)
+        public NuaReplPromptCallbacks(NuaContext scriptContext, int tabSize = 2)
         {
+            _scriptContext = scriptContext;
             _tabSize = tabSize;
         }
 
@@ -23,9 +31,10 @@ namespace NuaConsole
         static readonly AnsiColor kwdFuncColor = AnsiColor.Rgb(86, 156, 214);
         static readonly AnsiColor numberColor = AnsiColor.Rgb(181, 206, 168);
         static readonly AnsiColor stringColor = AnsiColor.Rgb(206, 145, 120);
-        static readonly AnsiColor boolAndNullColor = AnsiColor.Rgb(79, 193, 255);
+        static readonly AnsiColor boolAndNullColor = AnsiColor.Rgb(86, 156, 214);
         static readonly AnsiColor operatorColor = AnsiColor.Rgb(180, 180, 180);
         static readonly AnsiColor bracketColor = AnsiColor.Rgb(220, 220, 220);
+        static readonly AnsiColor stdModuleNameColor = AnsiColor.Rgb(73, 201, 176);
         static readonly AnsiColor functionNameColor = AnsiColor.Rgb(220, 220, 170);
 
 
@@ -87,25 +96,9 @@ namespace NuaConsole
         IList<Token>? _tokens;
         Expr? _expr;
         bool _isCompleteExpr = true;
+        bool _lexParseOk = false;
 
-        protected override async Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
-        {
-            if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter &&
-                keyPress.ConsoleKeyInfo.Modifiers == default &&
-                !string.IsNullOrWhiteSpace(text))
-            {
-                if (!_isCompleteExpr)
-                    return NewLineWithIndentation(GetSmartIndentationLevel(text, caret));
-            }
-
-            return await base.TransformKeyPressAsync(text, caret, keyPress, cancellationToken);
-
-            static KeyPress NewLineWithIndentation(int indentation) =>
-                new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n" + new string('\t', indentation));
-        }
-
-        readonly List<Token> tokensBuffer = new();
-        protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        void LexAndParse(string text)
         {
             var reader = new StringReader(text);
 
@@ -132,6 +125,33 @@ namespace NuaConsole
                 _isCompleteExpr = true;
             }
 
+            _lexParseOk = true;
+        }
+
+        protected override async Task<KeyPress> TransformKeyPressAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        {
+            if (keyPress.ConsoleKeyInfo.Key == ConsoleKey.Enter &&
+                keyPress.ConsoleKeyInfo.Modifiers == default &&
+                !string.IsNullOrWhiteSpace(text))
+            {
+                if (!_isCompleteExpr)
+                    return NewLineWithIndentation(GetSmartIndentationLevel(text, caret));
+            }
+
+            _lexParseOk = false;
+
+            return await base.TransformKeyPressAsync(text, caret, keyPress, cancellationToken);
+
+            static KeyPress NewLineWithIndentation(int indentation) =>
+                new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n" + new string('\t', indentation));
+        }
+
+        readonly List<Token> tokensBuffer = new();
+        protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        {
+            if (!_lexParseOk)
+                LexAndParse(text);
+
             var keyChar = keyPress.ConsoleKeyInfo.KeyChar;
 
             if (caret > 0)
@@ -141,6 +161,7 @@ namespace NuaConsole
                     case '{' or '}':
                     {
                         StringBuilder result = new();
+                        StringBuilder spaceBuffer = new();
                         int newCaret = -1;
 
                         bool inSpaceAfterNewLine = false;
@@ -150,7 +171,7 @@ namespace NuaConsole
 
                             if (inSpaceAfterNewLine)
                             {
-                                if (!char.IsWhiteSpace(ch))
+                                if (!char.IsWhiteSpace(ch) || ch == '\n')
                                 {
                                     int indentLevel = GetSmartIndentationLevel(text, i);
 
@@ -163,12 +184,19 @@ namespace NuaConsole
                                     result.Append(' ', _tabSize * indentLevel);
                                     inSpaceAfterNewLine = false;
                                     result.Append(ch);
+
+                                    _lexParseOk = spaceBuffer == result;
                                 }
+
+                                spaceBuffer.Append(ch);
                             }
                             else
                             {
                                 if (ch == '\n')
+                                {
                                     inSpaceAfterNewLine = true;
+                                    spaceBuffer.Clear();
+                                }
 
                                 result.Append(ch);
                             }
@@ -195,6 +223,9 @@ namespace NuaConsole
         readonly Dictionary<Range, ConsoleFormat> _highlightBuffer = new();
         protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
         {
+            if (!_lexParseOk)
+                LexAndParse(text);
+
             _highlightBuffer.Clear();
 
             try
@@ -214,16 +245,52 @@ namespace NuaConsole
                 {
                     foreach (var syntax in _expr.TreeEnumerate())
                     {
-                        if (syntax is ValueAccessExpr valueAccessExpr &&
-                            valueAccessExpr.ValueExpr is VariableExpr variableExpr &&
-                            variableExpr.NameToken.HasValue &&
-                            valueAccessExpr.TailExpr is ValueInvokeAccessTailExpr)
-                            _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
-                        else if (syntax is ValueMemberAccessTailExpr valueAccessTailExpr &&
-                            valueAccessTailExpr.NameToken.HasValue &&
-                            valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailExpr)
-                            _highlightBuffer[new Range(valueAccessTailExpr.NameToken.Value.StartIndex, valueAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                        if (syntax is ValueAccessExpr valueAccessExpr)
+                        {
+                            if (valueAccessExpr.ValueExpr is VariableExpr variableExpr &&
+                                variableExpr.NameToken.HasValue)
+                            {
+                                if (valueAccessExpr.TailExpr is ValueInvokeAccessTailExpr)
+                                {
+                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                }
+                            }
 
+                            ValueAccessTailExpr lastMemberAccessTail = valueAccessExpr.TailExpr;
+                            while (lastMemberAccessTail.NextTailExpr is ValueMemberAccessTailExpr)
+                                lastMemberAccessTail = lastMemberAccessTail.NextTailExpr;
+
+                            if (lastMemberAccessTail is ValueMemberAccessTailExpr memberAccessTailExpr &&
+                                lastMemberAccessTail.NextTailExpr is null &&
+                                memberAccessTailExpr.NameToken.HasValue)
+                            {
+                                var value = valueAccessExpr.Evaluate(_scriptContext);
+
+                                if (value is NuaFunction)
+                                    _highlightBuffer[new Range(memberAccessTailExpr.NameToken.Value.StartIndex, memberAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                else if (value is StandardModuleTable)
+                                    _highlightBuffer[new Range(memberAccessTailExpr.NameToken.Value.StartIndex, memberAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(stdModuleNameColor);
+                            }
+                        }
+                        else if (syntax is ValueMemberAccessTailExpr valueAccessTailExpr &&
+                            valueAccessTailExpr.NameToken.HasValue)
+                        {
+                            if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailExpr)
+                            {
+                                _highlightBuffer[new Range(valueAccessTailExpr.NameToken.Value.StartIndex, valueAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                            }
+                        }
+                        else if (syntax is VariableExpr variableExpr)
+                        {
+                            if (variableExpr.NameToken.HasValue)
+                            {
+                                NuaValue? varibaleValue = variableExpr.Evaluate(_scriptContext);
+                                if (varibaleValue is NuaFunction)
+                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                else if (varibaleValue is StandardModuleTable)
+                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(stdModuleNameColor);
+                            }
+                        }
                     }
                 }
             }
@@ -234,6 +301,67 @@ namespace NuaConsole
                 .ToList();
 
             return Task.FromResult<IReadOnlyCollection<FormatSpan>>(result);
+        }
+
+        protected override Task<bool> ShouldOpenCompletionWindowAsync(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        {
+            if (!_lexParseOk)
+                LexAndParse(text);
+
+            if (_tokens is not null)
+                foreach (var token in _tokens)
+                    if (token.Kind == TokenKind.Identifier && token.StartIndex <= caret && token.EndIndex + 1 >= caret)
+                        return Task.FromResult(true);
+
+            return Task.FromResult(false);
+        }
+
+        readonly (TokenKind TokenKind, string Value, string Description)[] normalKeywords = [
+            (TokenKind.KwdIf, "if", "Execute a block of code if a certain condition is true."),
+            (TokenKind.KwdElif, "elif", "Check for an additional condition if the previous conditions in the if statement are false."),
+            (TokenKind.KwdElse, "else", "Specify a default block of code that should be executed if none of the previous conditions in the if statement or elif statements are true."),
+            (TokenKind.KwdFor, "for", "Iterate over a collection of items or perform a numerical loop."),
+            (TokenKind.KwdIn, "in", "With the 'for' statement, specify the iterable object to iterate over."),
+            (TokenKind.KwdOf, "of", "Specify the range of numbers in a loop."),
+            (TokenKind.KwdWhile, "while", "Create a loop that executes code as long as a specified condition is true."),
+            (TokenKind.KwdContinue, "continue", "Skip the remaining code in the current iteration and move on to the next iteration."),
+            (TokenKind.KwdBreak, "break", "Immediately exit the loop and continue with the program execution outside of it."),
+            (TokenKind.KwdNull, "null", "Represents null value."),
+            (TokenKind.KwdTrue, "true", "Represents logical true value."),
+            (TokenKind.KwdFalse, "false", "Represents logical false value."),
+            (TokenKind.KwdNot, "not", "Performs logical negation."),
+            (TokenKind.KwdAnd, "and", "Performs logical conjunction."),
+            (TokenKind.KwdOr, "or", "Performs logical disjunction."),
+            (TokenKind.KwdFunction, "func", "Used to create functions."),
+            (TokenKind.KwdReturn, "return", "Used to exit a function execution and optionally return a value."),
+            (TokenKind.KwdGlobal, "global", "Declares a variable as global within the function body."),
+        ];
+        protected override Task<IReadOnlyList<CompletionItem>> GetCompletionItemsAsync(string text, int caret, TextSpan spanToBeReplaced, CancellationToken cancellationToken)
+        {
+            List<CompletionItem> result = new List<CompletionItem>();
+
+            foreach (var kwd in normalKeywords)
+                result.Add(new CompletionItem(kwd.Value, new FormattedString(kwd.Value, tokenKindColors[kwd.TokenKind]), getExtendedDescription: token => Task.FromResult<FormattedString>(kwd.Description)));
+            foreach (var variable in _scriptContext.GlobalFrame.Variables)
+                result.Add(new CompletionItem(variable.Key, new FormattedString(variable.Key, GetVariableFormat(variable.Value)), getExtendedDescription: token => Task.FromResult<FormattedString>(variable.Value.ToString() ?? "null")));
+
+            return Task.FromResult<IReadOnlyList<CompletionItem>>(result);
+        }
+
+        protected override Task<bool> ConfirmCompletionCommit(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
+        {
+            _lexParseOk = false;
+            return base.ConfirmCompletionCommit(text, caret, keyPress, cancellationToken);
+        }
+
+        ConsoleFormat GetVariableFormat(NuaValue? varibaleValue)
+        {
+            if (varibaleValue is NuaFunction)
+                return new ConsoleFormat(functionNameColor);
+            else if (varibaleValue is StandardModuleTable)
+                return new ConsoleFormat(stdModuleNameColor);
+
+            return default;
         }
 
         static int GetSmartIndentationLevel(string text, int caret)

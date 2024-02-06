@@ -6,7 +6,7 @@ using Nua.Types;
 
 namespace Nua.Stdlib
 {
-    public class ListOperations : NuaNativeTable
+    public class ListOperations : StandardModuleTable
     {
         private ListOperations() { }
 

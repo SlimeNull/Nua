@@ -2,7 +2,7 @@
 
 namespace Nua.Stdlib;
 
-public class MathOperations : NuaNativeTable
+public class MathOperations : StandardModuleTable
 {
     private MathOperations() { }
 

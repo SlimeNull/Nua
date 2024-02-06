@@ -3,6 +3,7 @@ using System.Text;
 using Nua;
 using Nua.CompileService;
 using PrettyPrompt;
+using PrettyPrompt.Highlighting;
 
 namespace NuaConsole
 {
@@ -43,10 +44,11 @@ namespace NuaConsole
             StringBuilder inputBuffer = new();
 
             Prompt prompt = new Prompt(
-                callbacks: new NuaReplPromptCallbacks(),
+                callbacks: new NuaReplPromptCallbacks(runtime.Context),
                 configuration: new PromptConfiguration(
                     tabSize: 2,
-                    prompt: ">>> "));
+                    prompt: ">>> ",
+                    completionBoxBorderFormat: new ConsoleFormat(AnsiColor.White)));
 
             while (true)
             {

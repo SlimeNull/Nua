@@ -59,6 +59,8 @@ namespace Nua.CompileService.Syntaxes
         {
             foreach (var syntax in base.TreeEnumerate())
                 yield return syntax;
+            foreach (var syntax in ValueExpr.TreeEnumerate())
+                yield return syntax;
             foreach (var syntax in TailExpr.TreeEnumerate())
                 yield return syntax;
         }
