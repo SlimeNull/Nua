@@ -76,11 +76,9 @@ namespace Nua.CompileService.Syntaxes
             if (parseStatus.Intercept)
                 return false;
 
-            // skip the last comma
-            TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _);
-
             if (!TokenMatch(tokens, true, TokenKind.BigBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
+                parseStatus.Intercept = true;
                 parseStatus.Message = "Expect '}' after '{' while parsing 'table-expression'";
                 return false;
             }

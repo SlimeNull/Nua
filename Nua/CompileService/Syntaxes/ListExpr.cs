@@ -33,24 +33,32 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             }
 
-            if (!ChainExpr.Match(tokens, false, ref cursor, out var chainParseStatus, out var chain) && chainParseStatus.Intercept)
+            List<Expr> members = new();
+            while (Expr.Match(tokens, false, ref cursor, out parseStatus, out var member))
             {
-                parseStatus = chainParseStatus;
-                return false;
+                members.Add(member);
+
+                if (!TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
+                    break;
             }
+
+            if (parseStatus.Intercept)
+                return false;
 
             if (!TokenMatch(tokens, true, TokenKind.SquareBracketRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                if (chain != null)
-                    parseStatus.Message = "Expect ']' after '[' while parsing 'list-expression'";
+                parseStatus.Intercept = true;
+
+                if (members.Count == 0)
+                    parseStatus.Message = "Expect ']' after list member while parsing 'list-expression'";
                 else
-                    parseStatus.Message = "Expect expression after '[' while parsing 'list-expression'";
+                    parseStatus.Message = "Expect list member after '[' while parsing 'list-expression'";
 
                 return false;
             }
 
             index = cursor;
-            expr = new ListExpr(chain?.Expressions ?? []);
+            expr = new ListExpr(members);
             parseStatus.Message = null;
             return true;
         }
