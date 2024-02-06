@@ -53,5 +53,15 @@ namespace Nua.CompileService.Syntaxes
             expr = new TableMemberExpr(key, value);
             return true;
         }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in KeyExpr.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in ValueExpr.TreeEnumerate())
+                yield return syntax;
+        }
     }
 }

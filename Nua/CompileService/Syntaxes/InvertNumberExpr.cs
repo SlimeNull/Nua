@@ -5,12 +5,12 @@ namespace Nua.CompileService.Syntaxes
 {
     public class InvertNumberExpr : UnaryExpr
     {
+        public Expr ValueExpr { get; }
+
         public InvertNumberExpr(Expr valueExpr)
         {
             ValueExpr = valueExpr;
         }
-
-        public Expr ValueExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
@@ -48,6 +48,15 @@ namespace Nua.CompileService.Syntaxes
             index = cursor;
             expr = new InvertNumberExpr(toInvert);
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            if (ValueExpr is not null)
+                foreach (var syntax in ValueExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

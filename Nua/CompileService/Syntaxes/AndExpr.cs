@@ -42,5 +42,15 @@ namespace Nua.CompileService.Syntaxes
             expr = tail != null ? new AndExpr(left, tail) : left;
             return true;
         }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in LeftExpr.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in TailExpr.TreeEnumerate())
+                yield return syntax;
+        }
     }
 }

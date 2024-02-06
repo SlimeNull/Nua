@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class SuffixSelfAddExpr : PrimaryExpr
     {
+        public Expr SelfExpr { get; }
+        public bool Negative { get; }
+
         public SuffixSelfAddExpr(Expr selfExpr, bool negative)
         {
             SelfExpr = selfExpr;
             Negative = negative;
         }
-
-        public Expr SelfExpr { get; }
-        public bool Negative { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
@@ -84,6 +84,14 @@ namespace Nua.CompileService.Syntaxes
             expr = new SuffixSelfAddExpr(self, negative);
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in SelfExpr.TreeEnumerate())
+                yield return syntax;
         }
     }
 }

@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class WhileExpr : ProcessExpr
     {
+        public Expr ConditionExpr { get; }
+        public MultiExpr? BodyExpr { get; }
+
         public WhileExpr(Expr conditionExpr, MultiExpr? bodyExpr)
         {
             ConditionExpr = conditionExpr;
             BodyExpr = bodyExpr;
         }
-
-        public Expr ConditionExpr { get; }
-        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
@@ -76,6 +76,18 @@ namespace Nua.CompileService.Syntaxes
             index = cursor;
             expr = new WhileExpr(conditionExpr, bodyExpr);
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in ConditionExpr.TreeEnumerate())
+                yield return syntax;
+
+            if (BodyExpr is not null)
+                foreach (var syntax in BodyExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

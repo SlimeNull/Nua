@@ -27,5 +27,10 @@ namespace Nua.CompileService.Syntaxes
 
             return true;
         }
+
+        public virtual IEnumerable<Syntax> TreeEnumerate()
+        {
+            yield return this;
+        }
     }
 }

@@ -8,10 +8,23 @@ namespace Nua.CompileService.Syntaxes
         public IReadOnlyList<string> ParameterNames { get; }
         public MultiExpr? BodyExpr { get; }
 
+        public IReadOnlyList<Token>? ParameterNameTokens { get; }
+
         public FuncExpr(IEnumerable<string> parameterNames, MultiExpr? bodyExpr)
         {
             ParameterNames = parameterNames.ToList().AsReadOnly();
             BodyExpr = bodyExpr;
+        }
+
+        public FuncExpr(IEnumerable<Token> parameterNameTokens, MultiExpr? bodyExpr)
+        {
+            foreach (var token in parameterNameTokens)
+                if (token.Value is null)
+                    throw new ArgumentException("Value of name token is null", nameof(parameterNameTokens));
+
+            ParameterNames = parameterNameTokens.Select(t => t.Value!).ToList().AsReadOnly();
+            BodyExpr = bodyExpr;
+            ParameterNameTokens = parameterNameTokens.ToList().AsReadOnly();
         }
 
         public override NuaValue? Evaluate(NuaContext context)
@@ -36,10 +49,10 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             }
 
-            List<string> parameterNames = new();
+            List<Token> parameterNameTokens = new();
             if (TokenMatch(tokens, false, TokenKind.Identifier, ref cursor, out _, out var firstParameterName))
             {
-                parameterNames.Add(firstParameterName.Value!);
+                parameterNameTokens.Add(firstParameterName);
 
                 while (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out _, out _))
                 {
@@ -50,14 +63,14 @@ namespace Nua.CompileService.Syntaxes
                         return false;
                     }
 
-                    parameterNames.Add(anotherParameterName.Value!);
+                    parameterNameTokens.Add(anotherParameterName);
                 }
             }
 
             if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
                 parseStatus.Intercept = true;
-                if (parameterNames.Count != 0)
+                if (parameterNameTokens.Count != 0)
                     parseStatus.Message = "Require ')' after parameters while parsing function";
                 else
                     parseStatus.Message = "Require parameters after '(' token while parsing function";
@@ -86,9 +99,19 @@ namespace Nua.CompileService.Syntaxes
             }
 
             index = cursor;
-            expr = new FuncExpr(parameterNames, body);
+            expr = new FuncExpr(parameterNameTokens, body);
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            if (BodyExpr is not null)
+                foreach (var syntax in BodyExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

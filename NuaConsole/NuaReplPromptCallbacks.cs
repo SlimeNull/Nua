@@ -5,6 +5,7 @@ using Nua.CompileService.Syntaxes;
 using PrettyPrompt;
 using PrettyPrompt.Consoles;
 using PrettyPrompt.Highlighting;
+using static PrettyPrompt.Highlighting.FormattedString.TextElementsEnumerator;
 
 namespace NuaConsole
 {
@@ -25,6 +26,7 @@ namespace NuaConsole
         static readonly AnsiColor boolAndNullColor = AnsiColor.Rgb(79, 193, 255);
         static readonly AnsiColor operatorColor = AnsiColor.Rgb(180, 180, 180);
         static readonly AnsiColor bracketColor = AnsiColor.Rgb(220, 220, 220);
+        static readonly AnsiColor functionNameColor = AnsiColor.Rgb(220, 220, 170);
 
 
         readonly Dictionary<TokenKind, ConsoleFormat> tokenKindColors = new()
@@ -102,16 +104,22 @@ namespace NuaConsole
                 new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n" + new string('\t', indentation));
         }
 
-
+        readonly List<Token> tokensBuffer = new();
         protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
             var reader = new StringReader(text);
 
-            _tokens = Lexer.Lex(reader).ToList();
+            _tokens = null;
             _expr = null;
 
             try
             {
+                tokensBuffer.Clear();
+
+                foreach (var token in Lexer.Lex(reader))
+                    tokensBuffer.Add(token);
+
+                _tokens = tokensBuffer;
                 _expr = Parser.Parse(_tokens);
                 _isCompleteExpr = true;
             }
@@ -119,9 +127,13 @@ namespace NuaConsole
             {
                 _isCompleteExpr = !parseException.Status.RequireMoreTokens;
             }
+            catch (Exception)
+            {
+                _isCompleteExpr = true;
+            }
 
             var keyChar = keyPress.ConsoleKeyInfo.KeyChar;
-            
+
             if (caret > 0)
             {
                 switch (keyChar)
@@ -180,24 +192,46 @@ namespace NuaConsole
             return base.FormatInput(text, caret, keyPress, cancellationToken);
         }
 
+        readonly Dictionary<Range, ConsoleFormat> _highlightBuffer = new();
         protected override Task<IReadOnlyCollection<FormatSpan>> HighlightCallbackAsync(string text, CancellationToken cancellationToken)
         {
-            List<FormatSpan> result = new List<FormatSpan>();
+            _highlightBuffer.Clear();
 
             try
             {
-                if (_tokens != null)
+                if (_tokens is not null)
                 {
                     foreach (var token in _tokens)
                     {
                         if (cancellationToken.IsCancellationRequested)
                             break;
 
-                        result.Add(FormatSpan.FromBounds(token.StartIndex, token.EndIndex, tokenKindColors[token.Kind]));
+                        _highlightBuffer[new Range(token.StartIndex, token.EndIndex)] = tokenKindColors[token.Kind];
+                    }
+                }
+
+                if (_expr is not null)
+                {
+                    foreach (var syntax in _expr.TreeEnumerate())
+                    {
+                        if (syntax is ValueAccessExpr valueAccessExpr &&
+                            valueAccessExpr.ValueExpr is VariableExpr variableExpr &&
+                            variableExpr.NameToken.HasValue &&
+                            valueAccessExpr.TailExpr is ValueInvokeAccessTailExpr)
+                            _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                        else if (syntax is ValueMemberAccessTailExpr valueAccessTailExpr &&
+                            valueAccessTailExpr.NameToken.HasValue &&
+                            valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailExpr)
+                            _highlightBuffer[new Range(valueAccessTailExpr.NameToken.Value.StartIndex, valueAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+
                     }
                 }
             }
             catch { }
+
+            var result = _highlightBuffer
+                .Select(kv => FormatSpan.FromBounds(kv.Key.Start.Value, kv.Key.End.Value, kv.Value))
+                .ToList();
 
             return Task.FromResult<IReadOnlyCollection<FormatSpan>>(result);
         }

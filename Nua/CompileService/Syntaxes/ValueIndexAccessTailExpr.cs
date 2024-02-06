@@ -5,12 +5,12 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueIndexAccessTailExpr : ValueAccessTailExpr
     {
+        public Expr IndexExpr { get; }
+
         public ValueIndexAccessTailExpr(Expr indexExpr, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
             IndexExpr = indexExpr;
         }
-
-        public Expr IndexExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
@@ -112,6 +112,18 @@ namespace Nua.CompileService.Syntaxes
             index = cursor;
             expr = new ValueIndexAccessTailExpr(indexExpr, nextTail);
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in IndexExpr.TreeEnumerate())
+                yield return syntax;
+
+            if (NextTailExpr is not null)
+                foreach (var syntax in NextTailExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

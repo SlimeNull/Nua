@@ -5,16 +5,16 @@ namespace Nua.CompileService.Syntaxes
 {
     public class MulTailExpr : Expr
     {
+        public Expr RightExpr { get; }
+        public MulOperation Operation { get; }
+        public MulTailExpr? NextTailExpr { get; }
+
         public MulTailExpr(Expr rightExpr, MulOperation operation, MulTailExpr? nextTailExpr)
         {
             RightExpr = rightExpr;
             Operation = operation;
             NextTailExpr = nextTailExpr;
         }
-
-        public Expr RightExpr { get; }
-        public MulOperation Operation { get; }
-        public MulTailExpr? NextTailExpr { get; }
 
         public NuaValue? Evaluate(NuaContext context, double leftValue)
         {
@@ -115,6 +115,18 @@ namespace Nua.CompileService.Syntaxes
             parseStatus.RequireMoreTokens = false;
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in RightExpr.TreeEnumerate())
+                yield return syntax;
+
+            if (NextTailExpr is not null)
+                foreach (var syntax in NextTailExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

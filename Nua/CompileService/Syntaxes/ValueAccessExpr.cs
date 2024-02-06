@@ -6,14 +6,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueAccessExpr : PrimaryExpr
     {
+        public ValueExpr ValueExpr { get; }
+        public ValueAccessTailExpr TailExpr { get; }
+
         public ValueAccessExpr(ValueExpr valueExpr, ValueAccessTailExpr tailExpr)
         {
             ValueExpr = valueExpr ?? throw new ArgumentNullException(nameof(valueExpr));
             TailExpr = tailExpr;
         }
-
-        public ValueExpr ValueExpr { get; }
-        public ValueAccessTailExpr TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
@@ -48,6 +48,14 @@ namespace Nua.CompileService.Syntaxes
             expr = tail != null ? new ValueAccessExpr((ValueExpr)variable, tail) : (ValueExpr)variable;
             index = cursor;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in TailExpr.TreeEnumerate())
+                yield return syntax;
         }
     }
 }

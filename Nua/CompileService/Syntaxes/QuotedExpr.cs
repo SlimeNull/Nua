@@ -45,5 +45,13 @@ namespace Nua.CompileService.Syntaxes
             expr = new QuotedExpr(content);
             return true;
         }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in ValueExpr.TreeEnumerate())
+                yield return syntax;
+        }
     }
 }

@@ -16,9 +16,6 @@ namespace Nua.CompileService.Syntaxes
         {
             var valueToAccess = expr.Evaluate(context);
 
-            if (valueToAccess == null)
-                throw new NuaEvalException("Unable to access member of null value");
-
             return Evaluate(context, valueToAccess);
         }
 

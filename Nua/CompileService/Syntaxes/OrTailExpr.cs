@@ -6,14 +6,14 @@ namespace Nua.CompileService.Syntaxes
 
     public class OrTailExpr : Expr
     {
+        public Expr RightExpr { get; }
+        public OrTailExpr? NextTailExpr { get; }
+
         public OrTailExpr(Expr rightExpr, OrTailExpr? nextTailExpr)
         {
             RightExpr = rightExpr;
             NextTailExpr = nextTailExpr;
         }
-
-        public Expr RightExpr { get; }
-        public OrTailExpr? NextTailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
@@ -74,6 +74,18 @@ namespace Nua.CompileService.Syntaxes
             parseStatus.RequireMoreTokens = false;
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in RightExpr.TreeEnumerate())
+                yield return syntax;
+
+            if (NextTailExpr is not null)
+                foreach (var syntax in NextTailExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

@@ -33,7 +33,7 @@ namespace Nua.CompileService.Syntaxes
         public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
         {
             parseStatus = new();
-expr = null;
+            expr = null;
             int cursor = index;
 
             if (!AndExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
@@ -47,6 +47,16 @@ expr = null;
             index = cursor;
             expr = tail != null ? new OrExpr(left, tail) : left;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in LeftExpr.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in TailExpr.TreeEnumerate())
+                yield return syntax;
         }
     }
 }

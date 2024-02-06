@@ -64,5 +64,15 @@ namespace Nua.CompileService.Syntaxes
             parseStatus.Message = null;
             return true;
         }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            foreach (var expr in MemberExpressions)
+                foreach (var syntax in expr.TreeEnumerate())
+                    yield return syntax;
+        }
     }
 }

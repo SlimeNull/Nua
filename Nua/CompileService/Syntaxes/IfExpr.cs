@@ -5,18 +5,18 @@ namespace Nua.CompileService.Syntaxes
 {
     public class IfExpr : ProcessExpr
     {
-        public IfExpr(Expr conditionExpr, MultiExpr? bodyExpr, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseExpr? elseExpressions)
+        public Expr ConditionExpr { get; }
+        public MultiExpr? BodyExpr { get; }
+        public IReadOnlyList<ElseIfExpr>? ElseIfExpressions { get; }
+        public ElseExpr? ElseExpr { get; }
+
+        public IfExpr(Expr conditionExpr, MultiExpr? bodyExpr, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseExpr? elseExpr)
         {
             ConditionExpr = conditionExpr;
             BodyExpr = bodyExpr;
             ElseIfExpressions = elseIfExpressions?.ToList()?.AsReadOnly();
-            ElseExpressions = elseExpressions;
+            ElseExpr = elseExpr;
         }
-
-        public Expr ConditionExpr { get; }
-        public MultiExpr? BodyExpr { get; }
-        public IReadOnlyList<ElseIfExpr>? ElseIfExpressions { get; }
-        public ElseExpr? ElseExpressions { get; }
 
         public NuaValue? Evaluate(NuaContext context, out bool executed, out EvalState state)
         {
@@ -51,10 +51,10 @@ namespace Nua.CompileService.Syntaxes
                     }
                 }
 
-                if (ElseExpressions != null)
+                if (ElseExpr != null)
                 {
                     executed = true;
-                    return ElseExpressions.Evaluate(context, out state);
+                    return ElseExpr.Evaluate(context, out state);
                 }
 
                 executed = false;
@@ -132,6 +132,25 @@ namespace Nua.CompileService.Syntaxes
             index = cursor;
             expr = new IfExpr(condition, body, elseifs, elseExpr);
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            if (BodyExpr is not null)
+                foreach (var syntax in BodyExpr.TreeEnumerate())
+                    yield return syntax;
+
+            if (ElseIfExpressions is not null)
+                foreach (var expr in ElseIfExpressions)
+                    foreach (var syntax in expr.TreeEnumerate())
+                        yield return syntax;
+
+            if (ElseExpr is not null)
+                foreach (var syntax in ElseExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

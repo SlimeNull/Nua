@@ -5,12 +5,12 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ElseExpr : ProcessExpr
     {
+        public MultiExpr? BodyExpr { get; }
+
         public ElseExpr(MultiExpr? bodyExpr)
         {
             BodyExpr = bodyExpr;
         }
-
-        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
@@ -61,6 +61,16 @@ namespace Nua.CompileService.Syntaxes
             index = cursor;
             expr = new ElseExpr(body);
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            if (BodyExpr is not null)
+                foreach (var syntax in BodyExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

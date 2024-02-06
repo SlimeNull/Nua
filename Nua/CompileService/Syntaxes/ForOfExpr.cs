@@ -4,6 +4,12 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ForOfExpr : ForExpr
     {
+        public string ValueName { get; }
+        public Expr StartExpr { get; }
+        public Expr EndExpr { get; }
+        public Expr? StepExpr { get; }
+        public MultiExpr? BodyExpr { get; }
+
         public ForOfExpr(string valueName, Expr startExpr, Expr endExpr, Expr? stepExpr, MultiExpr? bodyExpr)
         {
             ValueName = valueName;
@@ -12,12 +18,6 @@ namespace Nua.CompileService.Syntaxes
             StepExpr = stepExpr;
             BodyExpr = bodyExpr;
         }
-
-        public string ValueName { get; }
-        public Expr StartExpr { get; }
-        public Expr EndExpr { get; }
-        public Expr? StepExpr { get; }
-        public MultiExpr? BodyExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context, out EvalState state)
         {
@@ -81,6 +81,24 @@ namespace Nua.CompileService.Syntaxes
 
             state = EvalState.None;
             return result;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in StartExpr.TreeEnumerate())
+                yield return syntax;
+            foreach (var syntax in EndExpr.TreeEnumerate())
+                yield return syntax;
+
+            if (StepExpr is not null)
+                foreach (var syntax in StepExpr.TreeEnumerate())
+                    yield return syntax;
+
+            if (BodyExpr is not null)
+                foreach (var syntax in BodyExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

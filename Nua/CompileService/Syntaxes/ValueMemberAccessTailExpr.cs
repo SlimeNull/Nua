@@ -8,12 +8,22 @@ namespace Nua.CompileService.Syntaxes
 
     public class ValueMemberAccessTailExpr : ValueAccessTailExpr
     {
+        public string Name { get; }
+        public Token? NameToken { get; }
+
         public ValueMemberAccessTailExpr(string name, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
             Name = name;
         }
 
-        public string Name { get; }
+        public ValueMemberAccessTailExpr(Token nameToken, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+        {
+            if (nameToken.Value is null)
+                throw new ArgumentException("Value of name token is null", nameof(nameToken));
+
+            Name = nameToken.Value;
+            NameToken = nameToken;
+        }
 
         public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
@@ -53,18 +63,26 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             }
 
-            string name = idToken.Value!;
-
             if (!ValueAccessTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
             {
                 parseStatus = tailParseStatus;
                 return false;
             }
 
-            expr = new ValueMemberAccessTailExpr(name, nextTail);
+            expr = new ValueMemberAccessTailExpr(idToken, nextTail);
             index = cursor;
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            if (NextTailExpr is not null)
+                foreach (var syntax in NextTailExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

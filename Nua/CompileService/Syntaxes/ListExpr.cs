@@ -55,5 +55,15 @@ namespace Nua.CompileService.Syntaxes
             return true;
         }
 
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            if (ValueExpressions is not null)
+                foreach (var expr in ValueExpressions)
+                    foreach (var syntax in expr.TreeEnumerate())
+                        yield return syntax;
+        }
     }
 }

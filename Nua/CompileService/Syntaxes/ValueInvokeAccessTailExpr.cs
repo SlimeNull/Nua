@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class ValueInvokeAccessTailExpr : ValueAccessTailExpr
     {
+        public IReadOnlyList<Expr> ParameterExpressions { get; }
+
         public ValueInvokeAccessTailExpr(IEnumerable<Expr> parameterExpressions, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
             ParameterExpressions = parameterExpressions
                 .ToList()
                 .AsReadOnly();
         }
-
-        public IReadOnlyList<Expr> ParameterExpressions { get; }
 
         public override NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess)
         {
@@ -73,6 +73,20 @@ namespace Nua.CompileService.Syntaxes
             expr = new ValueInvokeAccessTailExpr(chain?.Expressions ?? [], nextTail);
             parseStatus.Message = null;
             return true;
+        }
+
+        public override IEnumerable<Syntax> TreeEnumerate()
+        {
+            foreach (var syntax in base.TreeEnumerate())
+                yield return syntax;
+
+            foreach (var parameterExpr in ParameterExpressions)
+                foreach (var syntax in parameterExpr.TreeEnumerate())
+                    yield return syntax;
+
+            if (NextTailExpr is not null)
+                foreach (var syntax in NextTailExpr.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

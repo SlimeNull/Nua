@@ -7,10 +7,20 @@ namespace Nua.CompileService.Syntaxes
     public class VariableExpr : ValueExpr
     {
         public string Name { get; }
+        public Token? NameToken { get; }
 
         public VariableExpr(string name)
         {
             Name = name;
+        }
+
+        public VariableExpr(Token nameToken)
+        {
+            if (nameToken.Value is null)
+                throw new ArgumentException("Value of name token is null", nameof(nameToken));
+
+            Name = nameToken.Value;
+            NameToken = nameToken;
         }
 
 
@@ -31,7 +41,7 @@ namespace Nua.CompileService.Syntaxes
             if (!TokenMatch(tokens, required, TokenKind.Identifier, ref index, out _, out var idToken))
                 return false;
 
-            expr = new VariableExpr(idToken.Value!);
+            expr = new VariableExpr(idToken);
             return true;
         }
     }
