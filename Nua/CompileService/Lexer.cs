@@ -119,18 +119,89 @@ namespace Nua.CompileService
                 }
                 else if (char.IsAsciiDigit(cch))
                 {
+                    // 不支持 .123
+                    // 支持 1.e10
                     int tokenLn = ln;
                     int tokenCol = col - 1;
                     int startIndex = index - 1;
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.Append(cch);
+                    bool isHex = false;
+                    bool isBit = false;
+
+                    StringBuilder sb = new();
+
+                    switch (reader.Peek())
+                    {
+                        case 'x':
+                            reader.Read();
+                            isHex = true;
+                            break;
+                        case 'b':
+                            reader.Read();
+                            isBit = true;
+                            break;
+                        default:
+                            sb.Append(cch);
+                            break;
+                    }
+
+                    //略过小数位和指数位
+                    if (isHex)
+                    {
+                        while (true)
+                        {
+                            ch = ReadAndRise();  // skip '.'
+                            cch = (char)ch;
+                            if (char.IsAsciiHexDigit(cch))
+                            {
+                                sb.Append(cch);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        if (ulong.TryParse(sb.ToString(), System.Globalization.NumberStyles.HexNumber, null, out var num))
+                        {
+                            yield return new Token(TokenKind.Number, num.ToString(), startIndex, index, tokenLn, tokenCol);
+                        }
+                        else
+                        {
+                            throw new NuaLexException("Invalid number");
+                        }
+                        continue;
+                    }
+                    else if (isBit)
+                    {
+                        while (true)
+                        {
+                            ch = ReadAndRise();  // skip '.'
+                            cch = (char)ch;
+                            if (cch is '0' or '1')
+                            {
+                                sb.Append(cch);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        if (ulong.TryParse(sb.ToString(), System.Globalization.NumberStyles.BinaryNumber, null, out var num))
+                        {
+                            yield return new Token(TokenKind.Number, num.ToString(), startIndex, index, tokenLn, tokenCol);
+                        }
+                        else
+                        {
+                            throw new NuaLexException("Invalid number");
+                        }
+                        continue;
+                    }
 
                     while (ch != -1)
                     {
                         ch = reader.Peek();
                         cch = (char)ch;
-                        if (ch >= '0' && ch <= '9')
+                        if (char.IsAsciiDigit(cch))
                         {
                             ReadAndRise();
                             sb.Append(cch);
@@ -149,7 +220,7 @@ namespace Nua.CompileService
                         {
                             ch = reader.Peek();
                             cch = (char)ch;
-                            if (ch >= '0' && ch <= '9')
+                            if (char.IsAsciiDigit(cch))
                             {
                                 ReadAndRise();
                                 sb.Append(cch);
@@ -161,7 +232,7 @@ namespace Nua.CompileService
                         }
                     }
 
-                    if (cch == 'e' || cch == 'E')
+                    if (cch is 'e' or 'E')
                     {
                         ReadAndRise();  // skip 'e'
                         sb.Append(cch);
@@ -222,10 +293,18 @@ namespace Nua.CompileService
 
                             sb.Append(escapeSeq switch
                             {
-                                't' => '\t',
+                                '"' => '"',
+                                '\\' => '\\',
+                                '\'' => '\'',
                                 'r' => '\r',
                                 'n' => '\n',
-                                'b' => '\b',
+                                '0' => '\0', // NUL
+                                'b' => '\b', // 退格
+                                't' => '\t', // 水平制表符
+                                'v' => '\v', // 垂直制表符
+                                'f' => '\f', // 换页
+                                'a' => '\a', // 响铃
+                                'e' => '\x1B', // <ESCAPE>
                                 _ => throw new NuaLexException("Invalid escape sequence")
                             });
                         }
