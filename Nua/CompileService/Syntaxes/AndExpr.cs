@@ -24,25 +24,6 @@ namespace Nua.CompileService.Syntaxes
             return new NuaBoolean(false);
         }
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
-        {
-            parseStatus = new();
-            expr = null;
-            int cursor = index;
-
-            if (!EqualExpr.Match(tokens, required, ref cursor, out parseStatus, out var left))
-                return false;
-            if (AndTailExpr.Match(tokens, false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
-            {
-                parseStatus = tailParseStatus;
-                return false;
-            }
-
-            index = cursor;
-            expr = tail != null ? new AndExpr(left, tail) : left;
-            return true;
-        }
-
         public override CompiledSyntax Compile()
         {
             var compiledLeft = LeftExpr.Compile();

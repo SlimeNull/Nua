@@ -1,7 +1,6 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum EqualOperation
 {
-    public enum EqualOperation
-    {
-        Equal, NotEqual
-    }
+    Equal, NotEqual
 }

@@ -1,7 +1,6 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum ForOperation
 {
-    public enum ForOperation
-    {
-        In, Of
-    }
+    In, Of
 }

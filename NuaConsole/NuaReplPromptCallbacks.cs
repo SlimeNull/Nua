@@ -110,7 +110,8 @@ namespace NuaConsole
                 foreach (var token in Lexer.Lex(reader))
                     _tokens.Add(token);
 
-                _expr = Parser.Parse(_tokens);
+                var parser = new Parser(_tokens);
+                _expr = parser.Parse();
                 _isCompleteExpr = true;
             }
             catch (NuaParseException parseException)

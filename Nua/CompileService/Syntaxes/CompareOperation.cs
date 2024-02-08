@@ -1,10 +1,9 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum CompareOperation
 {
-    public enum CompareOperation
-    {
-        LessThan,
-        GreaterThan,
-        LessEqual,
-        GreaterEqual,
-    }
+    LessThan,
+    GreaterThan,
+    LessEqual,
+    GreaterEqual,
 }

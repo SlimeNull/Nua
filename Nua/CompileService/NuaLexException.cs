@@ -1,9 +1,6 @@
-﻿namespace Nua.CompileService
+﻿namespace Nua.CompileService;
+
+public class NuaLexException : NuaException
 {
-    public class NuaLexException : NuaException
-    {
-        public NuaLexException(string? message) : base(message)
-        {
-        }
-    }
+    public NuaLexException(string? message) : base(message) { }
 }

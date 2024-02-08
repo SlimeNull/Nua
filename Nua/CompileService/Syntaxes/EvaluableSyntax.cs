@@ -1,10 +1,9 @@
 ﻿using Nua.Types;
 
-namespace Nua.CompileService.Syntaxes
+namespace Nua.CompileService.Syntaxes;
+
+public abstract class EvaluableSyntax : Syntax
 {
-    public abstract class EvaluableSyntax : Syntax
-    {
-        public abstract NuaValue? Evaluate(NuaContext context);
-        public abstract CompiledSyntax Compile();
-    }
+    public abstract NuaValue? Evaluate(NuaContext context);
+    public abstract CompiledSyntax Compile();
 }

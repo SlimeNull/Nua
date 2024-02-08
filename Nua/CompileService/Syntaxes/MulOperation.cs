@@ -1,7 +1,6 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum MulOperation
 {
-    public enum MulOperation
-    {
-        Mul, Div, Pow, Mod, DivInt
-    }
+    Mul, Div, Pow, Mod, DivInt
 }

@@ -1,7 +1,6 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum AssignOperation
 {
-    public enum AssignOperation
-    {
-        Assign, AddWith, MinWith,
-    }
+    Assign, AddWith, MinWith,
 }

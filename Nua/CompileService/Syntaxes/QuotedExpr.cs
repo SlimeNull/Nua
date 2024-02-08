@@ -1,59 +1,26 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Nua.Types;
 
-namespace Nua.CompileService.Syntaxes
+namespace Nua.CompileService.Syntaxes;
+
+public class QuotedExpr : ValueExpr
 {
-    public class QuotedExpr : ValueExpr
+    public QuotedExpr(Expr valueExpr)
     {
-        public QuotedExpr(Expr valueExpr)
-        {
-            ValueExpr = valueExpr;
-        }
+        ValueExpr = valueExpr;
+    }
 
-        public Expr ValueExpr { get; }
+    public Expr ValueExpr { get; }
 
-        public override NuaValue? Evaluate(NuaContext context) => ValueExpr.Evaluate(context);
+    public override NuaValue? Evaluate(NuaContext context) => ValueExpr.Evaluate(context);
 
-        public override CompiledSyntax Compile() => ValueExpr.Compile();
+    public override CompiledSyntax Compile() => ValueExpr.Compile();
 
-        public new static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
-        {
-            parseStatus = new();
-            expr = null;
-            int cursor = index;
-
-            if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
-            {
-                parseStatus.RequireMoreTokens = false;
-                parseStatus.Message = null;
-                return false;
-            }
-
-            if (!Expr.Match(tokens, required, ref cursor, out parseStatus, out var content))
-            {
-                if (parseStatus.Message == null)
-                    parseStatus.Message = ("Expect expression after '(' token while parsing 'quote-expressoin'");
-
-                return false;
-            }
-
-            if (!TokenMatch(tokens, required, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
-            {
-                parseStatus.Message = "Expect ')' after expression while parsing 'quote-expressoin'";
-                return false;
-            }
-
-            index = cursor;
-            expr = new QuotedExpr(content);
-            return true;
-        }
-
-        public override IEnumerable<Syntax> TreeEnumerate()
-        {
-            foreach (var syntax in base.TreeEnumerate())
-                yield return syntax;
-            foreach (var syntax in ValueExpr.TreeEnumerate())
-                yield return syntax;
-        }
+    public override IEnumerable<Syntax> TreeEnumerate()
+    {
+        foreach (var syntax in base.TreeEnumerate())
+            yield return syntax;
+        foreach (var syntax in ValueExpr.TreeEnumerate())
+            yield return syntax;
     }
 }

@@ -5,46 +5,45 @@ using System.Text;
 using System.Threading.Tasks;
 using Nua.Types;
 
-namespace Nua.CompileService
+namespace Nua.CompileService;
+
+public abstract class CompiledSyntax
 {
-    public abstract class CompiledSyntax
+    public abstract NuaValue? Evaluate(NuaContext context);
+
+
+    public static CompiledSyntax Empty { get; } = new StaticCompiledSyntax(null);
+
+    public static CompiledSyntax Create(NuaValue? value) => new StaticCompiledSyntax(value);
+    public static CompiledSyntax CreateFromDelegate(ImplementationDelegate implementation)
     {
-        public abstract NuaValue? Evaluate(NuaContext context);
+        return new DelegateCompiledSyntax(implementation);
+    }
 
 
-        public static CompiledSyntax Empty { get; } = new StaticCompiledSyntax(null);
+    public delegate NuaValue? ImplementationDelegate(NuaContext context);
 
-        public static CompiledSyntax Create(NuaValue? value) => new StaticCompiledSyntax(value);
-        public static CompiledSyntax CreateFromDelegate(ImplementationDelegate implementation)
+    class StaticCompiledSyntax : CompiledSyntax
+    {
+        public NuaValue? Value { get; }
+
+        public StaticCompiledSyntax(NuaValue? value)
         {
-            return new DelegateCompiledSyntax(implementation);
+            Value = value;
         }
 
+        public override NuaValue? Evaluate(NuaContext context) => Value;
+    }
 
-        public delegate NuaValue? ImplementationDelegate(NuaContext context);
+    class DelegateCompiledSyntax : CompiledSyntax
+    {
+        private readonly ImplementationDelegate _impl;
 
-        class StaticCompiledSyntax : CompiledSyntax
+        public DelegateCompiledSyntax(ImplementationDelegate impl)
         {
-            public NuaValue? Value { get; }
-
-            public StaticCompiledSyntax(NuaValue? value)
-            {
-                Value = value;
-            }
-
-            public override NuaValue? Evaluate(NuaContext context) => Value;
+            _impl = impl;
         }
 
-        class DelegateCompiledSyntax : CompiledSyntax
-        {
-            private readonly ImplementationDelegate _impl;
-
-            public DelegateCompiledSyntax(ImplementationDelegate impl)
-            {
-                _impl = impl;
-            }
-
-            public override NuaValue? Evaluate(NuaContext context) => _impl.Invoke(context);
-        }
+        public override NuaValue? Evaluate(NuaContext context) => _impl.Invoke(context);
     }
 }

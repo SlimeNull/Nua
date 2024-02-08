@@ -1,7 +1,6 @@
-﻿namespace Nua.CompileService.Syntaxes
+﻿namespace Nua.CompileService.Syntaxes;
+
+public enum EvalState
 {
-    public enum EvalState
-    {
-        None, Continue, Break, Return
-    }
+    None, Continue, Break, Return
 }

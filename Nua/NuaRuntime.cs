@@ -32,10 +32,11 @@ namespace Nua
             {
                 var reader = new StringReader(sb.ToString());
                 var tokens = Lexer.Lex(reader).ToArray();
+                var parser = new Parser(tokens);
 
                 try
                 {
-                    var expr = Parser.ParseMulti(tokens);
+                    var expr = parser.ParseMulti();
                     var compiled = expr.Compile();
 
                     return compiled.Evaluate(Context);
@@ -59,7 +60,9 @@ namespace Nua
 
             var reader = new StringReader(expression);
             var tokens = Lexer.Lex(reader).ToArray();
-            var multiExpr = Parser.ParseMulti(tokens);
+            var parser = new Parser(tokens);
+
+            var multiExpr = parser.ParseMulti();
             var compiled = multiExpr.Compile();
 
             var result = compiled.Evaluate(Context);
