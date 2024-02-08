@@ -68,7 +68,7 @@ namespace Nua.Stdlib
                                         count = Math.Min(list.Storage.Count - startIndex, (int)nuaCount.Value);
 
                                     for (int i = startIndex, j = 0; j < count; i++, j++)
-                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                             return list.Storage[i];
 
                                     return null;
@@ -79,7 +79,7 @@ namespace Nua.Stdlib
                                         startIndex = (int)nuaStartIndex.Value;
 
                                     for (int i = startIndex; i < list.Storage.Count; i++)
-                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                             return list.Storage[i];
 
                                     return null;
@@ -93,7 +93,7 @@ namespace Nua.Stdlib
                             else if (parameters[1] is NuaFunction nuaMatch)
                             {
                                 for (int i = 0; i < list.Storage.Count; i++)
-                                    if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                    if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                         return list.Storage[i];
 
                                 return null;
@@ -123,7 +123,7 @@ namespace Nua.Stdlib
                                         count = Math.Min(list.Storage.Count - startIndex, (int)nuaCount.Value);
 
                                     for (int i = startIndex + count - 1; i >= startIndex; i--)
-                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                             return list.Storage[i];
 
                                     return null;
@@ -134,7 +134,7 @@ namespace Nua.Stdlib
                                         startIndex = (int)nuaStartIndex.Value;
 
                                     for (int i = list.Storage.Count - 1; i >= startIndex; i--)
-                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                        if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                             return list.Storage[i];
 
                                     return null;
@@ -148,7 +148,7 @@ namespace Nua.Stdlib
                             else if (parameters[1] is NuaFunction nuaMatch)
                             {
                                 for (int i = list.Storage.Count - 1; i >= 0; i--)
-                                    if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, list.Storage[i])))
+                                    if (NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [list.Storage[i]], [])))
                                         return list.Storage[i];
 
                                 return null;
@@ -173,11 +173,11 @@ namespace Nua.Stdlib
                                 {
                                     var nuaMatch = OperationsHelper.TakeFunctionParam(functionName, parameters, 3);
 
-                                    return new NuaNumber(list.Storage.FindIndex((int)nuaStartIndex.Value, (int)nuaCount.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                    return new NuaNumber(list.Storage.FindIndex((int)nuaStartIndex.Value, (int)nuaCount.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                                 }
                                 else if (parameters[2] is NuaFunction nuaMatch)
                                 {
-                                    return new NuaNumber(list.Storage.FindIndex((int)nuaStartIndex.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                    return new NuaNumber(list.Storage.FindIndex((int)nuaStartIndex.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                                 }
                                 else
                                 {
@@ -186,7 +186,7 @@ namespace Nua.Stdlib
                             }
                             else if (parameters[1] is NuaFunction nuaMatch)
                             {
-                                return new NuaNumber(list.Storage.FindIndex(v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                return new NuaNumber(list.Storage.FindIndex(v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                             }
                             else
                             {
@@ -208,11 +208,11 @@ namespace Nua.Stdlib
                                 {
                                     var nuaMatch = OperationsHelper.TakeFunctionParam(functionName, parameters, 3);
 
-                                    return new NuaNumber(list.Storage.FindLastIndex((int)nuaStartIndex.Value, (int)nuaCount.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                    return new NuaNumber(list.Storage.FindLastIndex((int)nuaStartIndex.Value, (int)nuaCount.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                                 }
                                 else if (parameters[2] is NuaFunction nuaMatch)
                                 {
-                                    return new NuaNumber(list.Storage.FindLastIndex((int)nuaStartIndex.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                    return new NuaNumber(list.Storage.FindLastIndex((int)nuaStartIndex.Value, v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                                 }
                                 else
                                 {
@@ -221,7 +221,7 @@ namespace Nua.Stdlib
                             }
                             else if (parameters[1] is NuaFunction nuaMatch)
                             {
-                                return new NuaNumber(list.Storage.FindLastIndex(v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, v))));
+                                return new NuaNumber(list.Storage.FindLastIndex(v => NuaUtilities.ConditionTest(nuaMatch.Invoke(context, [v], []))));
                             }
                             else
                             {

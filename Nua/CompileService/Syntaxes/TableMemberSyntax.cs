@@ -7,9 +7,9 @@ namespace Nua.CompileService.Syntaxes
     /// xxx: expr,
     /// "xxx": expr
     /// </summary>
-    public class TableMemberExpr : Expr
+    public class TableMemberSyntax : Expr
     {
-        public TableMemberExpr(Expr keyExpr, Expr valueExpr)
+        public TableMemberSyntax(Expr keyExpr, Expr valueExpr)
         {
             KeyExpr = keyExpr;
             ValueExpr = valueExpr;
@@ -22,10 +22,10 @@ namespace Nua.CompileService.Syntaxes
 
         public override CompiledSyntax Compile() => ValueExpr.Compile();
 
-        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out TableMemberExpr? expr)
+        public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out TableMemberSyntax? syntax)
         {
             parseStatus = new();
-            expr = null;
+            syntax = null;
             int cursor = index;
 
             Expr key;
@@ -52,7 +52,7 @@ namespace Nua.CompileService.Syntaxes
             }
 
             index = cursor;
-            expr = new TableMemberExpr(key, value);
+            syntax = new TableMemberSyntax(key, value);
             return true;
         }
 

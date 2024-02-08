@@ -5,9 +5,9 @@ namespace Nua.CompileService.Syntaxes
 {
     public class TableExpr : ValueExpr
     {
-        public IReadOnlyList<TableMemberExpr> MemberExpressions { get; }
+        public IReadOnlyList<TableMemberSyntax> MemberExpressions { get; }
 
-        public TableExpr(IEnumerable<TableMemberExpr> memberExpressions)
+        public TableExpr(IEnumerable<TableMemberSyntax> memberExpressions)
         {
             MemberExpressions = memberExpressions
                 .ToList()
@@ -64,8 +64,8 @@ namespace Nua.CompileService.Syntaxes
                 return false;
             }
 
-            List<TableMemberExpr> members = new();
-            while (TableMemberExpr.Match(tokens, false, ref cursor, out parseStatus, out var member))
+            List<TableMemberSyntax> members = new();
+            while (TableMemberSyntax.Match(tokens, false, ref cursor, out parseStatus, out var member))
             {
                 members.Add(member);
 

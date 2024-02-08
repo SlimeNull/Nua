@@ -3,7 +3,7 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes
 {
-    public abstract class ValueAccessTailExpr : Expr
+    public abstract class ValueAccessTailExpr : Syntax
     {
         public ValueAccessTailExpr? NextTailExpr { get; }
 
@@ -26,7 +26,7 @@ namespace Nua.CompileService.Syntaxes
         {
             if (NextTailExpr != null)
             {
-                var value = Evaluate(context);
+                var value = Evaluate(context, valueToAccess);
 
                 if (value == null)
                     throw new NuaEvalException("Unable to access member of null value");
@@ -98,8 +98,6 @@ namespace Nua.CompileService.Syntaxes
 
         public abstract NuaValue? Evaluate(NuaContext context, NuaValue? valueToAccess);
         public abstract CompiledSyntax Compile(CompiledSyntax compiledValueToAccess);
-        public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
-        public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
         public static bool Match(IList<Token> tokens, bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
         {

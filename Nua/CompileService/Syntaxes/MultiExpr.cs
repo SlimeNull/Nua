@@ -3,7 +3,7 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes
 {
-    public class MultiExpr : Syntax
+    public class MultiExpr : EvaluableSyntax
     {
         public MultiExpr(IEnumerable<Expr> expressions)
         {

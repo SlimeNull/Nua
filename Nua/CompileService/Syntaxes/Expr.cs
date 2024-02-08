@@ -3,8 +3,7 @@ using System.Linq.Expressions;
 
 namespace Nua.CompileService.Syntaxes
 {
-
-    public abstract class Expr : Syntax
+    public abstract class Expr : EvaluableSyntax
     {
         static readonly Matcher[] matchers = new Matcher[]
         {

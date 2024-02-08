@@ -15,7 +15,7 @@ namespace Nua.Types
             _parameterNames = parameterNames;
         }
 
-        public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
+        public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
         {
             return Handler.Invoke(context, parameters);
         }

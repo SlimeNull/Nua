@@ -71,7 +71,7 @@ namespace Nua
         {
             public override IReadOnlyList<string> ParameterNames => ["value", "..."];
 
-            public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
+            public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
             {
                 Console.WriteLine(string.Join<NuaValue?>('\t', parameters));
 
@@ -83,7 +83,7 @@ namespace Nua
         {
             public override IReadOnlyList<string> ParameterNames => ["value", "..."];
 
-            public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
+            public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
             {
                 int len = 0;
                 foreach (var value in parameters)

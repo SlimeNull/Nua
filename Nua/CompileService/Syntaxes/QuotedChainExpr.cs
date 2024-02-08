@@ -3,7 +3,7 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes
 {
-    public class QuotedChainExpr : Syntax
+    public class QuotedChainExpr : EvaluableSyntax
     {
         public QuotedChainExpr(ChainExpr chainExpr)
         {

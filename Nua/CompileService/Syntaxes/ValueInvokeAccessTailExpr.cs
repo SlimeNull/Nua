@@ -6,10 +6,17 @@ namespace Nua.CompileService.Syntaxes
     public class ValueInvokeAccessTailExpr : ValueAccessTailExpr
     {
         public IReadOnlyList<Expr> ParameterExpressions { get; }
+        public IReadOnlyList<KeyValuePair<string, Expr>> NamedParameterExpressions { get; }
 
-        public ValueInvokeAccessTailExpr(IEnumerable<Expr> parameterExpressions, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+        public ValueInvokeAccessTailExpr(
+            IEnumerable<Expr> parameterExpressions,
+            IEnumerable<KeyValuePair<string, Expr>> namedParameterExpressions,
+            ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
         {
             ParameterExpressions = parameterExpressions
+                .ToList()
+                .AsReadOnly();
+            NamedParameterExpressions = namedParameterExpressions
                 .ToList()
                 .AsReadOnly();
         }
@@ -21,11 +28,14 @@ namespace Nua.CompileService.Syntaxes
             if (valueToAccess is not NuaFunction function)
                 throw new NuaEvalException("Unable to invoke a non-function value");
 
-            NuaValue?[] parameterValues = ParameterExpressions
+            var parameters = ParameterExpressions
                 .Select(p => p.Evaluate(context))
                 .ToArray();
+            var namedParameters = NamedParameterExpressions
+                .Select(p => new KeyValuePair<string, NuaValue?>(p.Key, p.Value.Evaluate(context)))
+                .ToArray();
 
-            var result = function.Invoke(context, parameterValues);
+            var result = function.Invoke(context, parameters, namedParameters);
 
             if (NextTailExpr != null)
                 result = NextTailExpr.Evaluate(context, result);
@@ -35,9 +45,12 @@ namespace Nua.CompileService.Syntaxes
 
         public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
         {
-            List<CompiledSyntax> compiledParameters = new(ParameterExpressions.Count);
-            foreach (var paramterExpr in ParameterExpressions)
-                compiledParameters.Add(paramterExpr.Compile());
+            var compiledParameters = ParameterExpressions
+                .Select(p => p.Compile())
+                .ToArray();
+            var compiledNamedParameters = NamedParameterExpressions
+                .Select(p => new KeyValuePair<string, CompiledSyntax>(p.Key, p.Value.Compile()))
+                .ToArray();
 
             CompiledSyntax result = CompiledSyntax.CreateFromDelegate(context =>
             {
@@ -48,11 +61,14 @@ namespace Nua.CompileService.Syntaxes
                 if (valueToAccess is not NuaFunction function)
                     throw new NuaEvalException("Unable to invoke a non-function value");
 
-                NuaValue?[] parameterValues = compiledParameters
-                    .Select(p => p.Evaluate(context))
+                var parameters = compiledParameters
+                    .Select(compiled => compiled.Evaluate(context))
+                    .ToArray();
+                var namedParameters = compiledNamedParameters
+                    .Select(compiled => new KeyValuePair<string, NuaValue?>(compiled.Key, compiled.Value.Evaluate(context)))
                     .ToArray();
 
-                var result = function.Invoke(context, parameterValues);
+                var result = function.Invoke(context, parameters, namedParameters);
 
                 return result;
             });
@@ -69,26 +85,52 @@ namespace Nua.CompileService.Syntaxes
             expr = null;
             int cursor = index;
 
-            if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
+            // 匹配左括号
+            if (!TokenMatch(tokens, required, TokenKind.ParenthesesLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                parseStatus.RequireMoreTokens = false;
                 parseStatus.Message = null;
                 return false;
             }
 
-            if (!ChainExpr.Match(tokens, true, ref cursor, out var chainParseStatus, out var chain) && chainParseStatus.Intercept)
+            List<Expr> positionParams = new();
+            List<KeyValuePair<string, Expr>> namedParams = new();
+            if (ValueInvokeParameterSyntax.Match(tokens, false, ref cursor, out parseStatus, out var firstParam))
             {
-                parseStatus = chainParseStatus;
-                return false;
+                if (firstParam.Name is not null)
+                    namedParams.Add(new KeyValuePair<string, Expr>(firstParam.Name, firstParam.ValueExpr));
+                else
+                    positionParams.Add(firstParam.ValueExpr);
+
+                while (TokenMatch(tokens, false, TokenKind.OptComma, ref cursor, out parseStatus.RequireMoreTokens, out _))
+                {
+                    if (!ValueInvokeParameterSyntax.Match(tokens, true, ref cursor, out parseStatus, out var otherParam))
+                        return false;
+
+                    if (otherParam.Name is not null)
+                    {
+                        namedParams.Add(new KeyValuePair<string, Expr>(otherParam.Name, otherParam.ValueExpr));
+                    }
+                    else
+                    {
+                        if (namedParams.Count != 0)
+                        {
+                            parseStatus.Intercept = true;
+                            parseStatus.Message = "The named parameter must be after the positional parameter while parsing 'value-invoke-acess-tail-expression'";
+                            return false;
+                        }
+
+                        positionParams.Add(otherParam.ValueExpr);
+                    }
+                }
             }
+
+            if (parseStatus.Intercept)
+                return false;
 
             if (!TokenMatch(tokens, true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
             {
-                if (chain != null)
-                    parseStatus.Message = "Require ')' after '(' while parsing 'value-access-expression'";
-                else
-                    parseStatus.Message = "Require parameter names after '(' while parsing 'value-access-expression'";
-
+                parseStatus.Intercept = true;
+                parseStatus.Message = "Require parameters or ')' after '(' while parsing 'value-access-expression'";
                 return false;
             }
 
@@ -99,7 +141,7 @@ namespace Nua.CompileService.Syntaxes
             }
 
             index = cursor;
-            expr = new ValueInvokeAccessTailExpr(chain?.Expressions ?? [], nextTail);
+            expr = new ValueInvokeAccessTailExpr(positionParams, namedParams, nextTail);
             parseStatus.Message = null;
             return true;
         }

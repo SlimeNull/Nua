@@ -6,7 +6,7 @@
 
         public abstract IReadOnlyList<string> ParameterNames { get; }
 
-        public abstract NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters);
+        public abstract NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters);
 
         public override string ToString()
         {

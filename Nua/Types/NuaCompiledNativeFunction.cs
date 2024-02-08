@@ -17,7 +17,7 @@ namespace Nua.Types
 
         protected readonly string[] _parameterNames;
 
-        public override NuaValue? Invoke(NuaContext context, params NuaValue?[] parameters)
+        public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
         {
             if (Body == null)
                 return null;
@@ -26,6 +26,8 @@ namespace Nua.Types
 
             for (int i = 0; i < _parameterNames.Length && i < parameters.Length; i++)
                 context.Set(_parameterNames[i], parameters[i]);
+            foreach (var namedParam in namedParameters)
+                context.Set(namedParam.Key, namedParam.Value);
 
             NuaValue? result = null;
             result = Body?.Evaluate(context, out var state);
