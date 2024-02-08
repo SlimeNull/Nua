@@ -86,7 +86,7 @@ public class Parser
         }
 
         if (cursor < _tokens.Count)
-            throw new NuaParseException(new ParseStatus(false, false, $"Unexpected token '{_tokens[cursor]}'"));
+            throw new NuaParseException(new ParseStatus(false, false, $"Unexpected token '{_tokens[cursor]}'", _tokens[cursor].TextRange));
 
         return expr;
     }
@@ -102,7 +102,7 @@ public class Parser
             throw new NuaParseException(_status);
         }
         if (cursor < _tokens.Count)
-            throw new NuaParseException(new ParseStatus(false, false, $"Unexpected token '{_tokens[cursor]}'"));
+            throw new NuaParseException(new ParseStatus(false, false, $"Unexpected token '{_tokens[cursor]}'", _tokens[cursor].TextRange));
 
         return expr;
     }

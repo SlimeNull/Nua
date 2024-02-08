@@ -10,24 +10,37 @@ namespace Nua.CompileService;
 
 public class Lexer
 {
-    public static IEnumerable<Token> Lex(TextReader reader)
+    private readonly TextReader _source;
+    private LexStatus _status;
+
+    public TextReader Source => _source;
+    public LexStatus Status => _status;
+
+    public Lexer(TextReader source)
+    {
+        _source = source;
+        _status = new();
+    }
+
+    public IEnumerable<Token> Lex()
     {
         int ln = 0;
         int col = 0;
         int index = 0;
+        _status = new();
 
         int ReadAndRise()
         {
-            int result = reader.Read();
+            int result = _source.Read();
 
             col++;
             index++;
 
             if (result == '\r')
             {
-                var next = reader.Peek();
+                var next = _source.Peek();
                 if (next == '\n')
-                    reader.Read();
+                    _source.Read();
 
                 col = 0;
                 ln++;
@@ -64,7 +77,7 @@ public class Lexer
 
                 while (true)
                 {
-                    ch = reader.Peek();
+                    ch = _source.Peek();
                     cch = (char)ch;
 
                     if (char.IsLetterOrDigit(cch) || cch == '_')
@@ -111,9 +124,9 @@ public class Lexer
                 };
 
                 if (kwdToken is TokenKind kwd)
-                    yield return new Token(kwd, null, startIndex, index, tokenLn, tokenCol);
+                    yield return new Token(new Range(startIndex, index), kwd, null, tokenLn, tokenCol);
                 else
-                    yield return new Token(TokenKind.Identifier, sb.ToString(), startIndex, index, tokenLn, tokenCol);
+                    yield return new Token(new Range(startIndex, index), TokenKind.Identifier, sb.ToString(), tokenLn, tokenCol);
 
                 continue;
             }
@@ -130,14 +143,14 @@ public class Lexer
 
                 StringBuilder sb = new();
 
-                switch (reader.Peek())
+                switch (_source.Peek())
                 {
                     case 'x':
-                        reader.Read();
+                        _source.Read();
                         isHex = true;
                         break;
                     case 'b':
-                        reader.Read();
+                        _source.Read();
                         isBit = true;
                         break;
                     default:
@@ -163,11 +176,11 @@ public class Lexer
                     }
                     if (ulong.TryParse(sb.ToString(), System.Globalization.NumberStyles.HexNumber, null, out var num))
                     {
-                        yield return new Token(TokenKind.Number, num.ToString(), startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.Number, num.ToString(), tokenLn, tokenCol);
                     }
                     else
                     {
-                        throw new NuaLexException("Invalid number");
+                        _status.Errors.Add(new(new Range(startIndex, index), "Invalid number"));
                     }
                     continue;
                 }
@@ -188,18 +201,18 @@ public class Lexer
                     }
                     if (ulong.TryParse(sb.ToString(), System.Globalization.NumberStyles.BinaryNumber, null, out var num))
                     {
-                        yield return new Token(TokenKind.Number, num.ToString(), startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.Number, num.ToString(), tokenLn, tokenCol);
                     }
                     else
                     {
-                        throw new NuaLexException("Invalid number");
+                        _status.Errors.Add(new(new Range(startIndex, index), "Invalid number"));
                     }
                     continue;
                 }
 
                 while (ch != -1)
                 {
-                    ch = reader.Peek();
+                    ch = _source.Peek();
                     cch = (char)ch;
                     if (char.IsAsciiDigit(cch))
                     {
@@ -218,7 +231,7 @@ public class Lexer
                     sb.Append(cch);
                     while (ch != -1)
                     {
-                        ch = reader.Peek();
+                        ch = _source.Peek();
                         cch = (char)ch;
                         if (char.IsAsciiDigit(cch))
                         {
@@ -237,7 +250,7 @@ public class Lexer
                     ReadAndRise();  // skip 'e'
                     sb.Append(cch);
 
-                    ch = reader.Peek();
+                    ch = _source.Peek();
                     if (ch >= '0' || ch <= '9' || ch == '+' || ch == '-')
                     {
                         sb.Append((char)ch);
@@ -246,7 +259,7 @@ public class Lexer
 
                     while (true)
                     {
-                        ch = reader.Peek();
+                        ch = _source.Peek();
                         cch = (char)ch;
                         if (ch >= '0' && ch <= '9')
                         {
@@ -263,9 +276,11 @@ public class Lexer
                 string numberStr = sb.ToString();
 
                 if (!double.TryParse(numberStr, out _))
-                    throw new NuaLexException("Invalid number");
+                {
+                    _status.Errors.Add(new(new Range(startIndex, index), "Invalid number"));
+                }
 
-                yield return new Token(TokenKind.Number, numberStr, startIndex, index, tokenLn, tokenCol);
+                yield return new Token(new Range(startIndex, index), TokenKind.Number, numberStr, tokenLn, tokenCol);
                 continue;
             }
             else if (cch == '"')
@@ -281,7 +296,12 @@ public class Lexer
                     var nextCh = ReadAndRise();
 
                     if (nextCh is -1 or '\r' or '\n')
-                        throw new NuaLexException("String not closed");
+                    {
+                        _status.Errors.Add(new(new Range(startIndex, index), "String not closed"));
+
+                        if (nextCh == -1)
+                            break;
+                    }
 
                     var nextCch = (char)nextCh;
                     if (nextCch == '\\')
@@ -289,9 +309,12 @@ public class Lexer
                         var escapeSeq = ReadAndRise();
 
                         if (escapeSeq == -1)
-                            throw new NuaLexException("String not closed");
+                        {
+                            _status.Errors.Add(new(new Range(startIndex, index), "String not closed"));
+                            break;
+                        }
 
-                        sb.Append(escapeSeq switch
+                        char? escaped = escapeSeq switch
                         {
                             '"' => '"',
                             '\\' => '\\',
@@ -305,8 +328,17 @@ public class Lexer
                             'f' => '\f', // 换页
                             'a' => '\a', // 响铃
                             'e' => '\x1B', // <ESCAPE>
-                            _ => throw new NuaLexException("Invalid escape sequence")
-                        });
+                            _ => null
+                        };
+
+                        if (escaped.HasValue)
+                        {
+                            sb.Append(escaped.Value);
+                        }
+                        else
+                        {
+                            _status.Errors.Add(new(new Range(index, index), "Invalid escape sequence"));
+                        }
                     }
                     else if (nextCch == '"')
                     {
@@ -318,13 +350,13 @@ public class Lexer
                     }
                 }
 
-                yield return new Token(TokenKind.String, sb.ToString(), startIndex, index, tokenLn, tokenCol);
+                yield return new Token(new Range(startIndex, index), TokenKind.String, sb.ToString(), tokenLn, tokenCol);
             }
             else if (cch == '#')
             {
                 while (true)
                 {
-                    var nextCh = reader.Peek();
+                    var nextCh = _source.Peek();
 
                     if (nextCh is '\r' or '\n' or -1)
                         break;
@@ -341,136 +373,137 @@ public class Lexer
                 switch (ch)
                 {
                     case '+':
-                        if (reader.Peek() == '+')
+                        if (_source.Peek() == '+')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptDoubleAdd, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptDoubleAdd, null, tokenLn, tokenCol);
                         }
-                        else if (reader.Peek() == '=')
+                        else if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptAddWith, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptAddWith, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptAdd, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptAdd, null, tokenLn, tokenCol);
                         }
                         break;
                     case '-':
-                        if (reader.Peek() == '-')
+                        if (_source.Peek() == '-')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptDoubleMin, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptDoubleMin, null, tokenLn, tokenCol);
                         }
-                        else if (reader.Peek() == '=')
+                        else if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptMinWith, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptMinWith, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptMin, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptMin, null, tokenLn, tokenCol);
                         }
                         break;
                     case '*':
-                        if (reader.Peek() == '*')
+                        if (_source.Peek() == '*')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptPow, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptPow, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptMul, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptMul, null, tokenLn, tokenCol);
                         }
                         break;
                     case '/':
-                        if (reader.Peek() == '/')
+                        if (_source.Peek() == '/')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptDivInt, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptDivInt, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptDiv, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptDiv, null, tokenLn, tokenCol);
                         }
                         break;
                     case '%':
-                        yield return new Token(TokenKind.OptMod, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.OptMod, null, tokenLn, tokenCol);
                         break;
                     case '(':
-                        yield return new Token(TokenKind.ParenthesesLeft, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.ParenthesesLeft, null, tokenLn, tokenCol);
                         break;
                     case ')':
-                        yield return new Token(TokenKind.ParenthesesRight, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.ParenthesesRight, null, tokenLn, tokenCol);
                         break;
                     case '[':
-                        yield return new Token(TokenKind.SquareBracketLeft, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.SquareBracketLeft, null, tokenLn, tokenCol);
                         break;
                     case ']':
-                        yield return new Token(TokenKind.SquareBracketRight, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.SquareBracketRight, null, tokenLn, tokenCol);
                         break;
                     case '{':
-                        yield return new Token(TokenKind.BigBracketLeft, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.BigBracketLeft, null, tokenLn, tokenCol);
                         break;
                     case '}':
-                        yield return new Token(TokenKind.BigBracketRight, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.BigBracketRight, null, tokenLn, tokenCol);
                         break;
                     case ':':
-                        yield return new Token(TokenKind.OptColon, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.OptColon, null, tokenLn, tokenCol);
                         break;
                     case ',':
-                        yield return new Token(TokenKind.OptComma, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.OptComma, null, tokenLn, tokenCol);
                         break;
                     case '.':
-                        yield return new Token(TokenKind.OptDot, null, startIndex, index, tokenLn, tokenCol);
+                        yield return new Token(new Range(startIndex, index), TokenKind.OptDot, null, tokenLn, tokenCol);
                         break;
                     case '>':
-                        if (reader.Peek() == '=')
+                        if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptGeq, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptGeq, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptGtr, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptGtr, null, tokenLn, tokenCol);
                         }
                         break;
                     case '<':
-                        if (reader.Peek() == '=')
+                        if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptLeq, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptLeq, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptLss, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptLss, null, tokenLn, tokenCol);
                         }
                         break;
                     case '!':
-                        if (reader.Peek() == '=')
+                        if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptNeq, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptNeq, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.KwdNot, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.KwdNot, null, tokenLn, tokenCol);
                         }
                         break;
                     case '=':
-                        if (reader.Peek() == '=')
+                        if (_source.Peek() == '=')
                         {
                             ReadAndRise();
-                            yield return new Token(TokenKind.OptEql, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptEql, null, tokenLn, tokenCol);
                         }
                         else
                         {
-                            yield return new Token(TokenKind.OptAssign, null, startIndex, index, tokenLn, tokenCol);
+                            yield return new Token(new Range(startIndex, index), TokenKind.OptAssign, null, tokenLn, tokenCol);
                         }
                         break;
 
                     default:
-                        throw new NuaLexException($"Invalid character '{ch}'");
+                        _status.Errors.Add(new(new Range(index, index), $"Invalid character '{(char)ch}'(value {ch})"));
+                        break;
                 }
             }
         }

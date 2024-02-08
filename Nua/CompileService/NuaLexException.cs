@@ -2,5 +2,11 @@
 
 public class NuaLexException : NuaException
 {
-    public NuaLexException(string? message) : base(message) { }
+    public LexStatus Status { get; }
+
+    public NuaLexException() { }
+    public NuaLexException(LexStatus status) : base(status.Errors.FirstOrDefault()?.Message)
+    {
+        Status = status;
+    }
 }

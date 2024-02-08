@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Nua;
 using Nua.CompileService;
@@ -36,6 +37,7 @@ namespace NuaConsole
         static readonly AnsiColor bracketColor = AnsiColor.Rgb(220, 220, 220);
         static readonly AnsiColor stdModuleNameColor = AnsiColor.Rgb(73, 201, 176);
         static readonly AnsiColor functionNameColor = AnsiColor.Rgb(220, 220, 170);
+        static readonly AnsiColor errorColor = AnsiColor.Rgb(212, 58, 52);
 
 
         readonly Dictionary<TokenKind, ConsoleFormat> tokenKindColors = new()
@@ -93,8 +95,10 @@ namespace NuaConsole
             [TokenKind.Number] = new ConsoleFormat(numberColor),
         };
 
+        Lexer? _lexer;
+        Parser? _parser;
         List<Token> _tokens = new();
-        Expr? _expr;
+        EvaluableSyntax? _syntax;
         bool _isCompleteExpr = true;
         bool _lexParseOk = false;
 
@@ -103,15 +107,16 @@ namespace NuaConsole
             var reader = new StringReader(text);
 
             _tokens.Clear();
-            _expr = null;
+            _syntax = null;
 
             try
             {
-                foreach (var token in Lexer.Lex(reader))
+                _lexer = new Lexer(reader);
+                foreach (var token in _lexer.Lex())
                     _tokens.Add(token);
 
-                var parser = new Parser(_tokens);
-                _expr = parser.Parse();
+                _parser = new Parser(_tokens);
+                _syntax = _parser.ParseMulti();
                 _isCompleteExpr = true;
             }
             catch (NuaParseException parseException)
@@ -218,20 +223,17 @@ namespace NuaConsole
 
             try
             {
-                if (_tokens is not null)
+                foreach (var token in _tokens)
                 {
-                    foreach (var token in _tokens)
-                    {
-                        if (cancellationToken.IsCancellationRequested)
-                            break;
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
 
-                        _highlightBuffer[new Range(token.StartIndex, token.EndIndex)] = tokenKindColors[token.Kind];
-                    }
+                    _highlightBuffer[token.TextRange] = tokenKindColors[token.Kind];
                 }
 
-                if (_expr is not null)
+                if (_syntax is not null)
                 {
-                    foreach (var syntax in _expr.TreeEnumerate())
+                    foreach (var syntax in _syntax.TreeEnumerate())
                     {
                         if (syntax is ValueAccessExpr valueAccessExpr)
                         {
@@ -240,7 +242,7 @@ namespace NuaConsole
                             {
                                 if (valueAccessExpr.TailExpr is ValueInvokeAccessTailSyntax)
                                 {
-                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                    _highlightBuffer[variableExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
                                 }
                             }
 
@@ -255,9 +257,9 @@ namespace NuaConsole
                                 var value = valueAccessExpr.Evaluate(_scriptContext);
 
                                 if (value is NuaFunction)
-                                    _highlightBuffer[new Range(memberAccessTailExpr.NameToken.Value.StartIndex, memberAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                    _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
                                 else if (value is StandardModuleTable)
-                                    _highlightBuffer[new Range(memberAccessTailExpr.NameToken.Value.StartIndex, memberAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(stdModuleNameColor);
+                                    _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(stdModuleNameColor);
                             }
                         }
                         else if (syntax is ValueMemberAccessTailSyntax valueAccessTailExpr &&
@@ -265,7 +267,7 @@ namespace NuaConsole
                         {
                             if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailSyntax)
                             {
-                                _highlightBuffer[new Range(valueAccessTailExpr.NameToken.Value.StartIndex, valueAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                _highlightBuffer[valueAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
                             }
                         }
                         else if (syntax is VariableExpr variableExpr)
@@ -274,11 +276,25 @@ namespace NuaConsole
                             {
                                 NuaValue? varibaleValue = variableExpr.Evaluate(_scriptContext);
                                 if (varibaleValue is NuaFunction)
-                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
+                                    _highlightBuffer[variableExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
                                 else if (varibaleValue is StandardModuleTable)
-                                    _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(stdModuleNameColor);
+                                    _highlightBuffer[variableExpr.NameToken.Value.TextRange] = new ConsoleFormat(stdModuleNameColor);
                             }
                         }
+                    }
+                }
+
+                if (_lexer is not null)
+                {
+                    foreach (var error in _lexer.Status.Errors)
+                    {
+                        if (!_highlightBuffer.TryGetValue(error.TextRange, out var format))
+                            format = default;
+
+                        _highlightBuffer[error.TextRange] = format with
+                        {
+                            Underline = true
+                        };
                     }
                 }
             }
@@ -298,7 +314,7 @@ namespace NuaConsole
 
             if (_tokens is not null)
                 foreach (var token in _tokens)
-                    if (token.Kind == TokenKind.Identifier && token.StartIndex <= caret && token.EndIndex + 1 >= caret)
+                    if (token.Kind == TokenKind.Identifier && token.TextRange.Start.Value <= caret && token.TextRange.End.Value+ 1 >= caret)
                         return Task.FromResult(true);
 
             return Task.FromResult(false);

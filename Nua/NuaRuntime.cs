@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Frozen;
+using System.Text;
 using Nua.CompileService;
 using Nua.Stdlib;
 using Nua.Types;
@@ -13,8 +14,10 @@ namespace Nua
         {
             Context = new NuaContext();
 
+            Context.SetGlobal("input", new NuaInputFunction());
             Context.SetGlobal("print", new NuaPrintFunction());
             Context.SetGlobal("len", new NuaLenFunction());
+
             Context.SetGlobal("table", TableOperations.Create());
             Context.SetGlobal("list", ListOperations.Create());
             Context.SetGlobal("math", MathOperations.Create());
@@ -31,7 +34,12 @@ namespace Nua
             while (true)
             {
                 var reader = new StringReader(sb.ToString());
-                var tokens = Lexer.Lex(reader).ToArray();
+                var lexer = new Lexer(reader);
+                var tokens = lexer.Lex().ToArray();
+
+                if (lexer.Status.HasError)
+                    throw new NuaLexException(lexer.Status);
+
                 var parser = new Parser(tokens);
 
                 try
@@ -59,9 +67,13 @@ namespace Nua
             ArgumentNullException.ThrowIfNull(expression, nameof(expression));
 
             var reader = new StringReader(expression);
-            var tokens = Lexer.Lex(reader).ToArray();
-            var parser = new Parser(tokens);
+            var lexer = new Lexer(reader);
+            var tokens = lexer.Lex().ToArray();
 
+            if (lexer.Status.HasError)
+                throw new NuaLexException(lexer.Status);
+
+            var parser = new Parser(tokens);
             var multiExpr = parser.ParseMulti();
             var compiled = multiExpr.Compile();
 
@@ -70,13 +82,53 @@ namespace Nua
             return result;
         }
 
-        class NuaPrintFunction : NuaFunction
+        class NuaInputFunction : NuaFunction
         {
-            public override IReadOnlyList<string> ParameterNames => ["value", "..."];
+            public override IReadOnlyList<string> ParameterNames => ["prompt"];
 
             public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
             {
-                Console.WriteLine(string.Join<NuaValue?>('\t', parameters));
+                var namedParametersDict = namedParameters.ToFrozenDictionary();
+
+                string? prompt = null;
+                if (namedParametersDict.TryGetValue("prompt", out NuaValue? nuaPrompt))
+                    prompt = nuaPrompt?.ToString();
+                else if (parameters.Length > 0)
+                    prompt = parameters[0]?.ToString();
+
+                if (prompt is not null)
+                    Console.Write(prompt);
+
+                string? input = Console.ReadLine();
+                return input != null ? new NuaString(input) : null;
+            }
+        }
+
+        class NuaPrintFunction : NuaFunction
+        {
+            public override IReadOnlyList<string> ParameterNames => ["value", "...", "sep", "end"];
+
+            public override NuaValue? Invoke(NuaContext context, NuaValue?[] parameters, KeyValuePair<string, NuaValue?>[] namedParameters)
+            {
+                var namedParametersDict = namedParameters.ToFrozenDictionary();
+
+                string sep;
+                if (namedParametersDict.TryGetValue("sep", out NuaValue? nuaSep))
+                    sep = nuaSep?.ToString() ?? string.Empty;
+                else
+                    sep = "\r";
+
+                string? end;
+                if (namedParametersDict.TryGetValue("end", out NuaValue? nuaEnd))
+                    end = nuaEnd?.ToString();
+                else
+                    end = "\n";
+
+
+                Console.Write(string.Join<NuaValue?>(sep, parameters));
+
+                if (end is not null)
+                    Console.Write(end);
 
                 return null;
             }
