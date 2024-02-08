@@ -582,13 +582,10 @@ public class Parser
 
     public bool MatchVariableExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
-        parseStatus = new();
         expr = null;
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
+        parseStatus = new();
 
-
-        if (!TokenMatch(required, TokenKind.Identifier, ref index, out _, out var idToken))
+        if (!TokenMatch(required, TokenKind.Identifier, ref index, out parseStatus.RequireMoreTokens, out var idToken))
             return false;
 
         expr = new VariableExpr(idToken);
@@ -597,8 +594,6 @@ public class Parser
 
     public bool MatchValueExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
         parseStatus = new();
         expr = null;
 
@@ -971,8 +966,6 @@ public class Parser
 
     public bool MatchUnaryExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
         parseStatus = new();
         expr = null;
 
@@ -1174,10 +1167,9 @@ public class Parser
         int cursor = index;
 
         Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptDoubleAdd, ref cursor, out _, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptDoubleMin, ref cursor, out _, out operatorToken))
+        if (!TokenMatch(required, TokenKind.OptDoubleAdd, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
+            !TokenMatch(required, TokenKind.OptDoubleMin, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
         {
-            parseStatus.RequireMoreTokens = false;
             parseStatus.Message = null;
             return false;
         }
@@ -1235,8 +1227,6 @@ public class Parser
 
     public bool MatchPrimaryExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
         parseStatus = new();
         expr = null;
 
@@ -1260,13 +1250,8 @@ public class Parser
         expr = null;
         int cursor = index;
 
-        if (!MatchValueAccessExpr(required, ref cursor, out _, out var self))
-        {
-            parseStatus.RequireMoreTokens = false;
-            parseStatus.Message = null;
+        if (!MatchValueAccessExpr(required, ref cursor, out parseStatus, out var self))
             return false;
-        }
-
 
         Token operatorToken;
         if (!TokenMatch(false, TokenKind.OptDoubleAdd, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
@@ -1372,10 +1357,8 @@ public class Parser
         expr = null;
         int cursor = index;
 
-        if (!TokenMatch(required, TokenKind.OptMin, ref cursor, out _, out _))
+        if (!TokenMatch(required, TokenKind.OptMin, ref cursor, out parseStatus.RequireMoreTokens, out _))
         {
-            parseStatus.RequireMoreTokens = false;
-            parseStatus.Message = null;
             return false;
         }
 
@@ -1486,9 +1469,8 @@ public class Parser
         syntax = null;
         int cursor = index;
 
-        if (!TokenMatch(required, TokenKind.OptDot, ref cursor, out _, out _))
+        if (!TokenMatch(required, TokenKind.OptDot, ref cursor, out parseStatus.RequireMoreTokens, out _))
         {
-            parseStatus.RequireMoreTokens = false;
             parseStatus.Message = null;
             return false;
         }
@@ -1517,9 +1499,8 @@ public class Parser
         expr = null;
         int cursor = index;
 
-        if (!TokenMatch(required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
+        if (!TokenMatch(required, TokenKind.ParenthesesLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
         {
-            parseStatus.RequireMoreTokens = false;
             parseStatus.Message = null;
             return false;
         }

@@ -41,8 +41,6 @@ namespace NuaConsole
             Console.WriteLine($"Nua V{version}");
             Console.WriteLine();
 
-            StringBuilder inputBuffer = new();
-
             Prompt prompt = new Prompt(
                 callbacks: new NuaReplPromptCallbacks(runtime.Context),
                 configuration: new PromptConfiguration(
@@ -52,8 +50,6 @@ namespace NuaConsole
 
             while (true)
             {
-                //string prompt = inputBuffer.Length == 0 ? ">>> " : "... ";
-                //Console.Write(prompt);
                 var promptResult = await prompt.ReadLineAsync();
 
                 if (!promptResult.IsSuccess)
@@ -64,26 +60,15 @@ namespace NuaConsole
                 if (string.IsNullOrWhiteSpace(input))
                     continue;
 
-                inputBuffer.AppendLine(input);
-
                 try
                 {
-                    try
-                    {
-                        var result = runtime.Evaluate(inputBuffer.ToString());
+                    var result = runtime.Evaluate(input);
 
-                        Console.WriteLine(result);
-                        inputBuffer.Clear();
-                    }
-                    catch (NuaParseException parseException) when (!parseException.Status.RequireMoreTokens)
-                    {
-                        inputBuffer.Clear();
-                    }
+                    Console.WriteLine(result);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    inputBuffer.Clear();
                 }
             }
         }
