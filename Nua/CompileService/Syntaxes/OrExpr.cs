@@ -31,13 +31,13 @@ public class OrExpr : Expr
         var compiledSegments = Segments
             .Select(segment => segment.Compile())
             .ToList();
-        var compiledSegmentsEnumerator = compiledSegments.GetEnumerator();
-
-        if (!compiledSegmentsEnumerator.MoveNext())
-            return CompiledSyntax.Create(null);
 
         return CompiledSyntax.CreateFromDelegate(context =>
         {
+            var compiledSegmentsEnumerator = compiledSegments.GetEnumerator();
+            if (!compiledSegmentsEnumerator.MoveNext())
+                return null;
+
             var result = compiledSegmentsEnumerator.Current.Evaluate(context);
             while (!EvalUtilities.ConditionTest(result) && compiledSegmentsEnumerator.MoveNext())
                 result = compiledSegmentsEnumerator.Current.Evaluate(context);

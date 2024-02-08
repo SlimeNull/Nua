@@ -48,12 +48,12 @@ public class AssignExpr : Expr
             .Select(assignment => new KeyValuePair<AssignOperation, (Expr Expr, CompiledSyntax Compiled)>(assignment.Key, (assignment.Value, assignment.Value.Compile())))
             .Reverse()
             .ToList();
-        var compiledAssignmentsReverseEnumerator = compiledReverseAssignments
-            .GetEnumerator();
-
         var compiledTailValue = TailValue.Compile();
         return CompiledSyntax.CreateFromDelegate(context =>
         {
+            var compiledAssignmentsReverseEnumerator = compiledReverseAssignments
+                .GetEnumerator();
+
             var result = compiledTailValue.Evaluate(context);
             while (compiledAssignmentsReverseEnumerator.MoveNext())
             {

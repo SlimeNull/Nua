@@ -180,7 +180,7 @@ namespace NuaConsole
                                 indentLevel = 0;
 
                             result.Append(' ', _tabSize * indentLevel);
-                            inSpaceAfterNewLine = false;
+                            inSpaceAfterNewLine = ch == '\n';
                             result.Append(ch);
 
                             _lexParseOk = spaceBuffer == result;
@@ -314,7 +314,7 @@ namespace NuaConsole
 
             if (_tokens is not null)
                 foreach (var token in _tokens)
-                    if (token.Kind == TokenKind.Identifier && token.TextRange.Start.Value <= caret && token.TextRange.End.Value+ 1 >= caret)
+                    if (token.Kind == TokenKind.Identifier && token.TextRange.Start.Value <= caret && token.TextRange.End.Value >= caret)
                         return Task.FromResult(true);
 
             return Task.FromResult(false);
