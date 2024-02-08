@@ -93,7 +93,7 @@ namespace NuaConsole
             [TokenKind.Number] = new ConsoleFormat(numberColor),
         };
 
-        IList<Token>? _tokens;
+        List<Token> _tokens = new();
         Expr? _expr;
         bool _isCompleteExpr = true;
         bool _lexParseOk = false;
@@ -102,17 +102,14 @@ namespace NuaConsole
         {
             var reader = new StringReader(text);
 
-            _tokens = null;
+            _tokens.Clear();
             _expr = null;
 
             try
             {
-                tokensBuffer.Clear();
-
                 foreach (var token in Lexer.Lex(reader))
-                    tokensBuffer.Add(token);
+                    _tokens.Add(token);
 
-                _tokens = tokensBuffer;
                 _expr = Parser.Parse(_tokens);
                 _isCompleteExpr = true;
             }
@@ -146,7 +143,6 @@ namespace NuaConsole
                 new(ConsoleKey.Insert.ToKeyInfo('\0', shift: true), "\n" + new string('\t', indentation));
         }
 
-        readonly List<Token> tokensBuffer = new();
         protected override Task<(string Text, int Caret)> FormatInput(string text, int caret, KeyPress keyPress, CancellationToken cancellationToken)
         {
             if (!_lexParseOk)
