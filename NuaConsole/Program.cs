@@ -75,13 +75,9 @@ namespace NuaConsole
                         Console.WriteLine(result);
                         inputBuffer.Clear();
                     }
-                    catch (NuaParseException parseException)
+                    catch (NuaParseException parseException) when (!parseException.Status.RequireMoreTokens)
                     {
-                        if (!parseException.Status.RequireMoreTokens)
-                        {
-                            inputBuffer.Clear();
-                            throw parseException;
-                        }
+                        inputBuffer.Clear();
                     }
                 }
                 catch (Exception ex)

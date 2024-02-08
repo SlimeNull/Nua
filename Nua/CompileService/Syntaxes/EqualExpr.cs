@@ -5,33 +5,56 @@ namespace Nua.CompileService.Syntaxes
 {
     public class EqualExpr : Expr
     {
-        public EqualExpr(Expr leftExpr, EqualTailSyntax tailExpr)
-        {
-            LeftExpr = leftExpr;
-            TailExpr = tailExpr;
-        }
+        public Expr Left { get; }
+        public IEnumerable<KeyValuePair<EqualOperation, Expr>> Tails { get; }
 
-        public Expr LeftExpr { get; }
-        public EqualTailSyntax TailExpr { get; }
+        public EqualExpr(Expr left, IEnumerable<KeyValuePair<EqualOperation, Expr>> tails)
+        {
+            Left = left;
+            Tails = tails;
+        }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            return TailExpr.Evaluate(context, LeftExpr);
+            var result = Left.Evaluate(context);
+
+            foreach (var tail in Tails)
+                result = tail.Key switch
+                {
+                    EqualOperation.NotEqual => EvalUtilities.EvalNotEqual(result, tail.Value.Evaluate(context)),
+                    EqualOperation.Equal or _ => EvalUtilities.EvalEqual(result, tail.Value.Evaluate(context)),
+                };
+
+            return result;
         }
 
         public override CompiledSyntax Compile()
         {
-            return TailExpr.Compile(LeftExpr);
+            var result = Left.Compile();
+
+            foreach (var tail in Tails)
+            {
+                var compiledLeft = result;
+                var compiledRight = tail.Value.Compile();
+                result = tail.Key switch
+                {
+                    EqualOperation.NotEqual => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalNotEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                    EqualOperation.Equal or _ => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalEqual(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                };
+            }
+
+            return result;
         }
 
         public override IEnumerable<Syntax> TreeEnumerate()
         {
             foreach (var syntax in base.TreeEnumerate())
                 yield return syntax;
-            foreach (var syntax in LeftExpr.TreeEnumerate())
+            foreach (var syntax in Left.TreeEnumerate())
                 yield return syntax;
-            foreach (var syntax in TailExpr.TreeEnumerate())
-                yield return syntax;
+            foreach (var tail in Tails)
+                foreach (var syntax in tail.Value.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

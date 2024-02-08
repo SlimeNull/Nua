@@ -4,7 +4,7 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class VariableExpr : ValueExpr
+public class VariableExpr : ValueExpr, IAssignableSyntax
 {
     public string Name { get; }
     public Token? NameToken { get; }
@@ -27,7 +27,7 @@ public class VariableExpr : ValueExpr
     public override NuaValue? Evaluate(NuaContext context) => context.Get(Name);
     public override CompiledSyntax Compile() => CompiledSyntax.CreateFromDelegate(context => context.Get(Name));
 
-    public void SetValue(NuaContext context, NuaValue? newValue)
+    public void Assign(NuaContext context, NuaValue? newValue)
     {
         context.Set(Name, newValue);
     }

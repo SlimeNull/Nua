@@ -6,14 +6,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Nua.CompileService.Syntaxes;
 using Nua.Types;
-using static Nua.CompileService.Parser;
-using static Nua.CompileService.Syntaxes.Expr;
 
 namespace Nua.CompileService;
 
 public class Parser
 {
-    private readonly ParseStatus _status;
+    private ParseStatus _status = default;
     private readonly IList<Token> _tokens;
 
     private readonly Matcher[] processExprMatchers;
@@ -35,56 +33,56 @@ public class Parser
 
         processExprMatchers = new Matcher[]
         {
-        MatchReturnExpr,
-        MatchBreakExpr,
-        MatchContinueExpr,
-        MatchWhileExpr,
-        MatchForExpr,
-        MatchIfExpr,
-        MatchGlobalExpr,
-        MatchUnaryExpr,
+            MatchReturnExpr,
+            MatchBreakExpr,
+            MatchContinueExpr,
+            MatchWhileExpr,
+            MatchForExpr,
+            MatchIfExpr,
+            MatchGlobalExpr,
+            MatchUnaryExpr,
         };
 
         exprMatchers = new Matcher[]
         {
-        MatchAssignExpr,
-        MatchOrExpr,
+            MatchAssignExpr,
+            MatchOrExpr,
         };
 
         valueExprMatchers = new Matcher[]
         {
-        MatchFuncExpr,
-        MatchTableExpr,
-        MatchListExpr,
-        MatchQuotedExpr,
-        MatchVariableExpr,
-        MatchConstExpr,
+            MatchFuncExpr,
+            MatchTableExpr,
+            MatchListExpr,
+            MatchQuotedExpr,
+            MatchVariableExpr,
+            MatchConstExpr,
         };
 
         unaryExprMatchers = new Matcher[]
         {
-        MatchPrefixSelfAddExpr,
-        MatchInvertNumberExpr,
-        MatchPrimaryExpr,
+            MatchPrefixSelfAddExpr,
+            MatchInvertNumberExpr,
+            MatchPrimaryExpr,
         };
 
         primaryExprMatchers = new Matcher[]
         {
-        MatchSuffixSelfAddExpr,
-        MatchValueAccessExpr,
-        MatchValueExpr,
+            MatchSuffixSelfAddExpr,
+            MatchValueAccessExpr,
+            MatchValueExpr,
         };
     }
 
     public Expr Parse()
     {
         int cursor = 0;
-        if (!MatchExpr(true, ref cursor, out var parseStatus, out var expr))
+        if (!MatchExpr(true, ref cursor, out _status, out var expr))
         {
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Invalid expression";
+            if (_status.Message == null)
+                _status.Message = "Invalid expression";
 
-            throw new NuaParseException(parseStatus);
+            throw new NuaParseException(_status);
         }
 
         if (cursor < _tokens.Count)
@@ -96,12 +94,12 @@ public class Parser
     public MultiExpr ParseMulti()
     {
         int cursor = 0;
-        if (!MatchMultiExpr(true, ref cursor, out var parseStatus, out var expr))
+        if (!MatchMultiExpr(true, ref cursor, out _status, out var expr))
         {
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Invalid expression";
+            if (_status.Message == null)
+                _status.Message = "Invalid expression";
 
-            throw new NuaParseException(parseStatus);
+            throw new NuaParseException(_status);
         }
         if (cursor < _tokens.Count)
             throw new NuaParseException(new ParseStatus(false, false, $"Unexpected token '{_tokens[cursor]}'"));
@@ -132,6 +130,25 @@ public class Parser
         return true;
     }
 
+    public bool MatchExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
+    {
+        parseStatus = new();
+        expr = null;
+
+        for (int i = 0; i < exprMatchers.Length; i++)
+        {
+            var matcher = exprMatchers[i];
+            bool isLast = i == exprMatchers.Length - 1;
+
+            if (matcher.Invoke(isLast ? required : false, ref index, out parseStatus, out expr))
+                return true;
+            else if (parseStatus.Intercept)
+                return false;
+        }
+
+        return false;
+    }
+
     public bool MatchAddExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
         parseStatus = new();
@@ -140,55 +157,34 @@ public class Parser
 
         if (!MatchMulExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (!MatchAddTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        Token operationToken;
+        List<KeyValuePair<AddOperation, Expr>> operations = new();
+        while (
+            TokenMatch(required, TokenKind.OptAdd, ref cursor, out parseStatus.RequireMoreTokens, out operationToken) ||
+            TokenMatch(required, TokenKind.OptMin, ref cursor, out parseStatus.RequireMoreTokens, out operationToken))
         {
-            parseStatus = tailParseStatus;
-            return false;
+
+            if (!MatchMulExpr(true, ref cursor, out parseStatus, out var right))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message is null)
+                    parseStatus.Message = "Expect 'mul-expression' after '+' or '-' while parsing 'add-expression'";
+                return false;
+            }
+
+            var operation = operationToken.Kind switch
+            {
+                TokenKind.OptAdd => AddOperation.Add,
+                TokenKind.OptMin => AddOperation.Min,
+                _ => AddOperation.Add
+            };
+
+            operations.Add(new(operation, right));
         }
 
         index = cursor;
-        expr = tail != null ? new AddExpr(left, tail) : left;
-        return true;
-    }
-
-    public bool MatchAddTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AddTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptAdd, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptMin, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
-        {
-            parseStatus.Message = null;
-            return false;
-        }
-
-        var operation = operatorToken.Kind switch
-        {
-            TokenKind.OptAdd => AddOperation.Add,
-            TokenKind.OptMin => AddOperation.Min,
-            _ => AddOperation.Add
-        };
-
-        if (!MatchMulExpr(true, ref cursor, out parseStatus, out var right))
-        {
-            parseStatus.Intercept = true;
-            return false;
-        }
-
-        if (!MatchAddTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus.Intercept = true;
-            parseStatus.Message = tailParseStatus.Message;
-            return false;
-        }
-
-        index = cursor;
-        expr = new AddTailSyntax(right, operation, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
+        expr = operations.Count != 0 ? new AddExpr(left, operations) : left;
         return true;
     }
 
@@ -200,70 +196,45 @@ public class Parser
 
         if (!MatchProcessExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (!MatchMulTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        Token operationToken;
+        List<KeyValuePair<MulOperation, Expr>> operations = new();
+        while (
+            TokenMatch(required, TokenKind.OptMul, ref cursor, out _, out operationToken) ||
+            TokenMatch(required, TokenKind.OptDiv, ref cursor, out _, out operationToken) ||
+            TokenMatch(required, TokenKind.OptPow, ref cursor, out _, out operationToken) ||
+            TokenMatch(required, TokenKind.OptMod, ref cursor, out _, out operationToken) ||
+            TokenMatch(required, TokenKind.OptDivInt, ref cursor, out _, out operationToken))
         {
-            parseStatus = tailParseStatus;
-            return false;
+
+            if (!MatchProcessExpr(true, ref cursor, out parseStatus, out var right))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message is null)
+                    parseStatus.Message = "Expect 'mul-expression' after '+' or '-' while parsing 'add-expression'";
+                return false;
+            }
+
+            var operation = operationToken.Kind switch
+            {
+                TokenKind.OptMul => MulOperation.Mul,
+                TokenKind.OptDiv => MulOperation.Div,
+                TokenKind.OptPow => MulOperation.Pow,
+                TokenKind.OptMod => MulOperation.Mod,
+                TokenKind.OptDivInt => MulOperation.DivInt,
+                _ => MulOperation.Mul
+            };
+
+            operations.Add(new(operation, right));
         }
 
         index = cursor;
-        expr = tail != null ? new MulExpr(left, tail) : left;
-        return true;
-    }
-
-    public bool MatchMulTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptMul, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptDiv, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptPow, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptMod, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptDivInt, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
-        {
-            parseStatus.Message = null;
-            return false;
-        }
-
-        var operation = operatorToken.Kind switch
-        {
-            TokenKind.OptMul => MulOperation.Mul,
-            TokenKind.OptDiv => MulOperation.Div,
-            TokenKind.OptPow => MulOperation.Pow,
-            TokenKind.OptMod => MulOperation.Mod,
-            TokenKind.OptDivInt => MulOperation.DivInt,
-            _ => MulOperation.Mul
-        };
-
-        if (!MatchProcessExpr(true, ref cursor, out parseStatus, out var right))
-        {
-            parseStatus.Intercept = true;
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Expect expression after '*','/','**','//','%' while parsing 'mul-expression'";
-
-            return false;
-        }
-
-        if (!MatchMulTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
-        index = cursor;
-        expr = new MulTailSyntax(right, operation, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
+        expr = operations.Count != 0 ? new MulExpr(left, operations) : left;
         return true;
     }
 
     public bool MatchProcessExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
     {
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
         parseStatus = new();
         expr = null;
 
@@ -271,27 +242,6 @@ public class Parser
         {
             var matcher = processExprMatchers[i];
             bool isLast = i == processExprMatchers.Length - 1;
-
-            if (matcher.Invoke(isLast ? required : false, ref index, out parseStatus, out expr))
-                return true;
-            else if (parseStatus.Intercept)
-                return false;
-        }
-
-        return false;
-    }
-
-    public bool MatchExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out Expr? expr)
-    {
-        parseStatus.RequireMoreTokens = required;
-        parseStatus.Message = null;
-        parseStatus = new();
-        expr = null;
-
-        for (int i = 0; i < exprMatchers.Length; i++)
-        {
-            var matcher = exprMatchers[i];
-            bool isLast = i == exprMatchers.Length - 1;
 
             if (matcher.Invoke(isLast ? required : false, ref index, out parseStatus, out expr))
                 return true;
@@ -672,16 +622,26 @@ public class Parser
         expr = null;
         int cursor = index;
 
+        List<Expr> segments = new();
         if (!MatchAndExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (!MatchOrTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        segments.Add(left);
+        while (TokenMatch(false, TokenKind.KwdOr, ref cursor, out _, out _))
         {
-            parseStatus = tailParseStatus;
-            return false;
+            if (!MatchAndExpr(true, ref cursor, out parseStatus, out var otherSegment))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'and-expression' after 'or' keyword while parsing 'or-expression'";
+                return false;
+            }
+
+            segments.Add(otherSegment);
         }
 
         index = cursor;
-        expr = tail != null ? new OrExpr(left, tail) : left;
+        expr = segments.Count > 1 ? new OrExpr(segments) : left;
         return true;
     }
 
@@ -691,16 +651,26 @@ public class Parser
         expr = null;
         int cursor = index;
 
+        List<Expr> segments = new();
         if (!MatchEqualExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (MatchAndTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        segments.Add(left);
+        while (TokenMatch(false, TokenKind.KwdAnd, ref cursor, out _, out _))
         {
-            parseStatus = tailParseStatus;
-            return false;
+            if (!MatchEqualExpr(true, ref cursor, out parseStatus, out var otherSegment))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'equal-expression' after 'and' keyword while parsing 'and-expression'";
+                return false;
+            }
+
+            segments.Add(otherSegment);
         }
 
         index = cursor;
-        expr = tail != null ? new AndExpr(left, tail) : left;
+        expr = segments.Count > 1 ? new AndExpr(segments) : left;
         return true;
     }
 
@@ -710,16 +680,35 @@ public class Parser
         expr = null;
         int cursor = index;
 
+        List<KeyValuePair<EqualOperation, Expr>> tails = new();
         if (!MatchCompareExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (!MatchEqualTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        Token operationToken;
+        while (
+            TokenMatch(false, TokenKind.OptEql, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptNeq, ref cursor, out _, out operationToken))
         {
-            parseStatus = tailParseStatus;
-            return false;
+            if (!MatchCompareExpr(true, ref cursor, out parseStatus, out var tailExpr))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'compare-expression' after '==' or '!=' while parsing 'equal-expression'";
+                return false;
+            }
+
+            EqualOperation operation = operationToken.Kind switch
+            {
+                TokenKind.OptEql => EqualOperation.Equal,
+                TokenKind.OptNeq => EqualOperation.NotEqual,
+                _ => EqualOperation.Equal,
+            };
+
+            tails.Add(new(operation, tailExpr));
         }
 
         index = cursor;
-        expr = tail != null ? new EqualExpr(left, tail) : left;
+        expr = tails.Count != 0 ? new EqualExpr(left, tails) : left;
         return true;
     }
 
@@ -729,168 +718,39 @@ public class Parser
         expr = null;
         int cursor = index;
 
+        List<KeyValuePair<CompareOperation, Expr>> tails = new();
         if (!MatchAddExpr(required, ref cursor, out parseStatus, out var left))
             return false;
-        if (!MatchCompareTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
+
+        Token operationToken;
+        while (
+            TokenMatch(false, TokenKind.OptLss, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptGtr, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptLeq, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptGeq, ref cursor, out _, out operationToken))
         {
-            parseStatus = tailParseStatus;
-            return false;
+            if (!MatchAddExpr(true, ref cursor, out parseStatus, out var tailExpr))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'compare-expression' after '==' or '!=' while parsing 'compare-expression'";
+                return false;
+            }
+
+            CompareOperation operation = operationToken.Kind switch
+            {
+                TokenKind.OptLss => CompareOperation.LessThan,
+                TokenKind.OptGtr => CompareOperation.GreaterThan,
+                TokenKind.OptLeq => CompareOperation.LessEqual,
+                TokenKind.OptGeq => CompareOperation.GreaterEqual,
+                _ => CompareOperation.LessThan,
+            };
+
+            tails.Add(new(operation, tailExpr));
         }
 
         index = cursor;
-        expr = tail != null ? new CompareExpr(left, tail) : left;
-        return true;
-    }
-
-    public bool MatchCompareTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptLss, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptGtr, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptLeq, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptGeq, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
-        {
-            parseStatus.Message = null;
-            return false;
-        }
-
-        CompareOperation operation = operatorToken.Kind switch
-        {
-            TokenKind.OptLss => CompareOperation.LessThan,
-            TokenKind.OptGtr => CompareOperation.GreaterThan,
-            TokenKind.OptLeq => CompareOperation.LessEqual,
-            TokenKind.OptGeq => CompareOperation.GreaterEqual,
-            _ => CompareOperation.LessThan,
-        };
-
-        if (!MatchAddExpr(true, ref cursor, out parseStatus, out var right))
-            return false;
-
-        if (!MatchCompareTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
-        index = cursor;
-        expr = new CompareTailSyntax(right, operation, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
-        return true;
-    }
-
-    public bool MatchEqualTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptEql, ref cursor, out _, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptNeq, ref cursor, out _, out operatorToken))
-        {
-            parseStatus.RequireMoreTokens = required;
-            parseStatus.Message = null;
-            return false;
-        }
-
-        EqualOperation operation = operatorToken.Kind switch
-        {
-            TokenKind.OptEql => EqualOperation.Equal,
-            TokenKind.OptNeq => EqualOperation.NotEqual,
-            _ => EqualOperation.Equal,
-        };
-
-        if (!MatchCompareExpr(true, ref cursor, out parseStatus, out var right))
-        {
-            parseStatus.Intercept = true;
-            return false;
-        }
-
-        if (!MatchEqualTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
-        index = cursor;
-        expr = new EqualTailSyntax(right, operation, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
-        return true;
-    }
-
-    public bool MatchOrTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out OrTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        if (!TokenMatch(required, TokenKind.KwdOr, ref cursor, out parseStatus.RequireMoreTokens, out _))
-        {
-            parseStatus.Intercept = required;
-            parseStatus.Message = null;
-            return false;
-        }
-
-        if (!MatchAndExpr(true, ref cursor, out parseStatus, out var right))
-        {
-            parseStatus.Intercept = true;
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Expect 'and-expression' after 'or' keyword";
-
-            return false;
-        }
-
-        if (!MatchOrTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
-        index = cursor;
-        expr = new OrTailSyntax(right, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
-        return true;
-    }
-
-    public bool MatchAndTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AndTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        if (!TokenMatch(required, TokenKind.KwdAnd, ref cursor, out _, out _))
-        {
-            parseStatus.RequireMoreTokens = required;
-            parseStatus.Message = null;
-            return false;
-        }
-
-        if (!MatchEqualExpr(true, ref cursor, out parseStatus, out var right))
-        {
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Require 'equal-expression' after 'and' keyword";
-
-            return false;
-        }
-
-        if (!MatchAndTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus.RequireMoreTokens = true;
-            parseStatus.Message = tailParseStatus.Message;
-            return false;
-        }
-
-        index = cursor;
-        expr = new AndTailSyntax(right, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
+        expr = tails.Count != 0 ? new CompareExpr(left, tails) : left;
         return true;
     }
 
@@ -938,7 +798,7 @@ public class Parser
 
         List<ElseIfExpr>? elseifs = null;
 
-        while (MatchElseIfExpr(false, ref cursor, out parseStatus, out var elseif))
+        while (MatchElseIfSyntax(false, ref cursor, out parseStatus, out var elseif))
         {
             if (elseifs == null)
                 elseifs = new();
@@ -949,7 +809,7 @@ public class Parser
         if (parseStatus.Intercept)
             return false;
 
-        if (!MatchElseExpr(false, ref cursor, out var elseParseStatus, out var elseExpr) && elseParseStatus.Intercept)
+        if (!MatchElseSyntax(false, ref cursor, out var elseParseStatus, out var elseExpr) && elseParseStatus.Intercept)
         {
             parseStatus = elseParseStatus;
             return false;
@@ -960,10 +820,10 @@ public class Parser
         return true;
     }
 
-    public bool MatchElseExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseSyntax? expr)
+    public bool MatchElseSyntax(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseSyntax? syntax)
     {
         parseStatus = new();
-        expr = null;
+        syntax = null;
         int cursor = index;
 
         if (!TokenMatch(required, TokenKind.KwdElse, ref cursor, out parseStatus.RequireMoreTokens, out _))
@@ -996,14 +856,14 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ElseSyntax(body);
+        syntax = new ElseSyntax(body);
         return true;
     }
 
-    public bool MatchElseIfExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseIfExpr? expr)
+    public bool MatchElseIfSyntax(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseIfExpr? syntax)
     {
         parseStatus = new();
-        expr = null;
+        syntax = null;
         int cursor = index;
 
         if (!TokenMatch(required, TokenKind.KwdElif, ref cursor, out parseStatus.RequireMoreTokens, out _))
@@ -1040,7 +900,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ElseIfExpr(condition, body);
+        syntax = new ElseIfExpr(condition, body);
         return true;
     }
 
@@ -1050,58 +910,38 @@ public class Parser
         expr = null;
         int cursor = index;
 
-        if (!MatchOrExpr(required, ref cursor, out parseStatus, out var left))
+        List<KeyValuePair<AssignOperation, Expr>> assignments = new();
+        if (!MatchOrExpr(required, ref cursor, out parseStatus, out var tailValue))
             return false;
-        if (!MatchAssignTailExpr(false, ref cursor, out parseStatus, out var tail) && parseStatus.Intercept)
-            return false;
 
-        index = cursor;
-        expr = tail != null ? new AssignExpr(left, tail) : left;
-        return true;
-    }
-
-    public bool MatchAssignTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailSyntax? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        Token operatorToken;
-        if (!TokenMatch(required, TokenKind.OptAssign, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptAddWith, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken) &&
-            !TokenMatch(required, TokenKind.OptMinWith, ref cursor, out parseStatus.RequireMoreTokens, out operatorToken))
+        Token operationToken;
+        while (
+            TokenMatch(false, TokenKind.OptAssign, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptAddWith, ref cursor, out _, out operationToken) ||
+            TokenMatch(false, TokenKind.OptMinWith, ref cursor, out _, out operationToken))
         {
-            parseStatus.Intercept = required;
-            parseStatus.Message = null;
-            return false;
-        }
+            if (!MatchOrExpr(true, ref cursor, out parseStatus, out var newTailValue))
+            {
+                parseStatus.Intercept = true;
+                if (parseStatus.Message == null)
+                    parseStatus.Message = "Expect 'or-expression' after '=', '+=' or '-=' while parsing 'assign-expression'";
+                return false;
+            }
 
-        AssignOperation operation = operatorToken.Kind switch
-        {
-            TokenKind.OptAssign => AssignOperation.Assign,
-            TokenKind.OptAddWith => AssignOperation.AddWith,
-            TokenKind.OptMinWith => AssignOperation.MinWith,
-            _ => default
-        };
+            AssignOperation operation = operationToken.Kind switch
+            {
+                TokenKind.OptAssign => AssignOperation.Assign,
+                TokenKind.OptAddWith => AssignOperation.AddWith,
+                TokenKind.OptMinWith => AssignOperation.MinWith,
+                _ => default
+            };
 
-        if (!MatchOrExpr(required, ref cursor, out parseStatus, out var right))
-        {
-            if (parseStatus.Message == null)
-                parseStatus.Message = "Require expression after '=' token while parsing 'assign-tail-expression'";
-
-            return false;
-        }
-
-        if (!MatchAssignTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
+            assignments.Add(new KeyValuePair<AssignOperation, Expr>(operation, tailValue));
+            tailValue = newTailValue;
         }
 
         index = cursor;
-        expr = new AssignTailSyntax(right, operation, nextTail);
-        parseStatus.RequireMoreTokens = false;
-        parseStatus.Message = null;
+        expr = assignments.Count != 0 ? new AssignExpr(assignments, tailValue) : tailValue;
         return true;
     }
 
@@ -1381,11 +1221,11 @@ public class Parser
     {
         parseStatus = new();
         expr = null;
-        if (MatchValueIndexAccessTailExpr(required, ref index, out parseStatus, out var expr3))
+        if (MatchValueIndexAccessTailSyntax(required, ref index, out parseStatus, out var expr3))
             expr = expr3;
-        else if (MatchValueInvokeAccessTailExpr(required, ref index, out parseStatus, out var expr2))
+        else if (MatchValueInvokeAccessTailSyntax(required, ref index, out parseStatus, out var expr2))
             expr = expr2;
-        else if (MatchValueMemberAccessTailExpr(required, ref index, out parseStatus, out var expr1))
+        else if (MatchValueMemberAccessTailSyntax(required, ref index, out parseStatus, out var expr1))
             expr = expr1;
         else
             return false;
@@ -1446,10 +1286,10 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueIndexAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailSyntax? expr)
+    public bool MatchValueIndexAccessTailSyntax(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailSyntax? syntax)
     {
         parseStatus = new();
-        expr = null;
+        syntax = null;
         int cursor = index;
 
         if (!TokenMatch(required, TokenKind.SquareBracketLeft, ref cursor, out parseStatus.RequireMoreTokens, out _))
@@ -1480,7 +1320,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ValueIndexAccessTailSyntax(indexExpr, nextTail);
+        syntax = new ValueIndexAccessTailSyntax(indexExpr, nextTail);
         return true;
     }
 
@@ -1552,10 +1392,10 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueInvokeAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailSyntax? expr)
+    public bool MatchValueInvokeAccessTailSyntax(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailSyntax? syntax)
     {
         parseStatus = new();
-        expr = null;
+        syntax = null;
         int cursor = index;
 
         // 匹配左括号
@@ -1614,7 +1454,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ValueInvokeAccessTailSyntax(positionParams, namedParams, nextTail);
+        syntax = new ValueInvokeAccessTailSyntax(positionParams, namedParams, nextTail);
         parseStatus.Message = null;
         return true;
     }
@@ -1640,10 +1480,10 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueMemberAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailSyntax? expr)
+    public bool MatchValueMemberAccessTailSyntax(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailSyntax? syntax)
     {
         parseStatus = new();
-        expr = null;
+        syntax = null;
         int cursor = index;
 
         if (!TokenMatch(required, TokenKind.OptDot, ref cursor, out _, out _))
@@ -1665,7 +1505,7 @@ public class Parser
             return false;
         }
 
-        expr = new ValueMemberAccessTailSyntax(idToken, nextTail);
+        syntax = new ValueMemberAccessTailSyntax(idToken, nextTail);
         index = cursor;
         parseStatus.Message = null;
         return true;
@@ -1700,33 +1540,6 @@ public class Parser
 
         index = cursor;
         expr = new QuotedExpr(content);
-        return true;
-    }
-
-    public bool MatchQuotedChainExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out QuotedChainExpr? expr)
-    {
-        parseStatus = new();
-        expr = null;
-        int cursor = index;
-
-        if (!TokenMatch(required, TokenKind.ParenthesesLeft, ref cursor, out _, out _))
-        {
-            parseStatus.RequireMoreTokens = false;
-            parseStatus.Message = null;
-            return false;
-        }
-
-        if (!MatchChainExpr(true, ref cursor, out parseStatus, out var chain))
-            return false;
-
-        if (!TokenMatch(true, TokenKind.ParenthesesRight, ref cursor, out parseStatus.RequireMoreTokens, out _))
-        {
-            parseStatus.Message = "Require ')' after 'chain-expression' while parsing 'quoted-chain-expression'";
-            return false;
-        }
-
-        index = cursor;
-        expr = new QuotedChainExpr(chain);
         return true;
     }
 

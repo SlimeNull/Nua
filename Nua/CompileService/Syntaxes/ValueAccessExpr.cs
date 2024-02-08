@@ -4,7 +4,7 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class ValueAccessExpr : PrimaryExpr
+public class ValueAccessExpr : PrimaryExpr, IAssignableSyntax
 {
     public ValueExpr ValueExpr { get; }
     public ValueAccessTailSyntax TailExpr { get; }
@@ -24,14 +24,9 @@ public class ValueAccessExpr : PrimaryExpr
         return TailExpr.Compile(ValueExpr);
     }
 
-    public void SetMemberValue(NuaContext context, NuaValue? value)
+    public void Assign(NuaContext context, NuaValue? value)
     {
         TailExpr.SetMemberValue(context, ValueExpr, value);
-    }
-
-    public void SetMemberValue(NuaContext context, Expr valueExpr)
-    {
-        TailExpr.SetMemberValue(context, ValueExpr, valueExpr.Evaluate(context));
     }
 
     public override IEnumerable<Syntax> TreeEnumerate()

@@ -5,37 +5,45 @@ namespace Nua.CompileService.Syntaxes
 {
     public class AndExpr : Expr
     {
-        public AndExpr(Expr leftExpr, AndTailSyntax tailExpr)
+        public AndExpr(IEnumerable<Expr> segments)
         {
-            LeftExpr = leftExpr;
-            TailExpr = tailExpr;
+            Segments = segments;
         }
 
-        public Expr LeftExpr { get; }
-        public AndTailSyntax TailExpr { get; }
+
+        public IEnumerable<Expr> Segments { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {
-            var leftValue = LeftExpr.Evaluate(context);
+            var segmentsEnumerator = Segments.GetEnumerator();
 
-            if (leftValue is NuaBoolean leftBoolean && leftBoolean.Value)
-                return TailExpr.Evaluate(context);
+            if (!segmentsEnumerator.MoveNext())
+                return null;
 
-            return new NuaBoolean(false);
+            var result = segmentsEnumerator.Current.Evaluate(context);
+            while (EvalUtilities.ConditionTest(result) && segmentsEnumerator.MoveNext())
+                result = segmentsEnumerator.Current.Evaluate(context);
+
+            return result;
         }
 
         public override CompiledSyntax Compile()
         {
-            var compiledLeft = LeftExpr.Compile();
-            var compiledTail = TailExpr.Compile();
+            var compiledSegments = Segments
+                .Select(segment => segment.Compile())
+                .ToList();
+            var compiledSegmentsEnumerator = compiledSegments.GetEnumerator();
 
-            return CompiledSyntax.CreateFromDelegate((context) =>
+            if (!compiledSegmentsEnumerator.MoveNext())
+                return CompiledSyntax.Create(null);
+
+            return CompiledSyntax.CreateFromDelegate(context =>
             {
-                var right = compiledLeft.Evaluate(context);
-                if (EvalUtilities.ConditionTest(right))
-                    return compiledTail.Evaluate(context);
-                else
-                    return right;
+                var result = compiledSegmentsEnumerator.Current.Evaluate(context);
+                while (EvalUtilities.ConditionTest(result) && compiledSegmentsEnumerator.MoveNext())
+                    result = compiledSegmentsEnumerator.Current.Evaluate(context);
+
+                return result;
             });
         }
 
@@ -43,10 +51,9 @@ namespace Nua.CompileService.Syntaxes
         {
             foreach (var syntax in base.TreeEnumerate())
                 yield return syntax;
-            foreach (var syntax in LeftExpr.TreeEnumerate())
-                yield return syntax;
-            foreach (var syntax in TailExpr.TreeEnumerate())
-                yield return syntax;
+            foreach (var segment in Segments)
+                foreach (var syntax in segment.TreeEnumerate())
+                    yield return syntax;
         }
     }
 }

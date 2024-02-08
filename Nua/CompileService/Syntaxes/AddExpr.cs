@@ -6,32 +6,57 @@ namespace Nua.CompileService.Syntaxes;
 
 public class AddExpr : Expr
 {
-    public Expr LeftExpr { get; }
-    public AddTailSyntax TailExpr { get; }
+    public Expr Value { get; }
+    public IEnumerable<KeyValuePair<AddOperation, Expr>> Operations { get; }
 
-    public AddExpr(Expr leftExpr, AddTailSyntax tailExpr)
+    public AddExpr(Expr left, IEnumerable<KeyValuePair<AddOperation, Expr>> operations)
     {
-        LeftExpr = leftExpr;
-        TailExpr = tailExpr;
+        Value = left;
+        Operations = operations;
     }
 
     public override NuaValue? Evaluate(NuaContext context)
     {
-        return TailExpr.Evaluate(context, LeftExpr);
+        NuaValue? result = Value.Evaluate(context);
+
+        foreach (var operation in Operations)
+        {
+            result = operation.Key switch
+            {
+                AddOperation.Min => EvalUtilities.EvalMinus(result, operation.Value.Evaluate(context)),
+                AddOperation.Add or _ => EvalUtilities.EvalPlus(result, operation.Value.Evaluate(context)),
+            };
+        }
+
+        return result;
     }
 
     public override CompiledSyntax Compile()
     {
-        return TailExpr.Compile(LeftExpr);
+        var result = Value.Compile();
+
+        foreach (var operation in Operations)
+        {
+            var compiledLeft = result;
+            var compiledRight = operation.Value.Compile();
+            result = operation.Key switch
+            {
+                AddOperation.Min => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalMinus(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+                AddOperation.Add or _ => CompiledSyntax.CreateFromDelegate(context => EvalUtilities.EvalPlus(compiledLeft.Evaluate(context), compiledRight.Evaluate(context))),
+            };
+        }
+
+        return result;
     }
 
     public override IEnumerable<Syntax> TreeEnumerate()
     {
         foreach (var syntax in base.TreeEnumerate())
             yield return syntax;
-        foreach (var syntax in LeftExpr.TreeEnumerate())
+        foreach (var syntax in Value.TreeEnumerate())
             yield return syntax;
-        foreach (var syntax in TailExpr.TreeEnumerate())
-            yield return syntax;
+        foreach (var tail in Operations)
+            foreach (var syntax in tail.Value.TreeEnumerate())
+                yield return syntax;
     }
 }
