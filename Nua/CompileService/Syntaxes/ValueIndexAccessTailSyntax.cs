@@ -3,11 +3,11 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class ValueIndexAccessTailExpr : ValueAccessTailExpr
+public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
 {
     public Expr IndexExpr { get; }
 
-    public ValueIndexAccessTailExpr(Expr indexExpr, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+    public ValueIndexAccessTailSyntax(Expr indexExpr, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
     {
         IndexExpr = indexExpr;
     }
@@ -85,7 +85,6 @@ public class ValueIndexAccessTailExpr : ValueAccessTailExpr
 
         return result;
     }
-
     public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
     {
         CompiledSyntax compiledIndex = IndexExpr.Compile();

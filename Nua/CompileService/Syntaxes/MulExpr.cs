@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes;
 
 public class MulExpr : Expr
 {
-    public MulExpr(Expr leftExpr, MulTailExpr tailExpr)
+    public MulExpr(Expr leftExpr, MulTailSyntax tailExpr)
     {
         LeftExpr = leftExpr;
         TailExpr = tailExpr;
     }
 
     public Expr LeftExpr { get; }
-    public MulTailExpr TailExpr { get; }
+    public MulTailSyntax TailExpr { get; }
 
     public override NuaValue? Evaluate(NuaContext context)
     {

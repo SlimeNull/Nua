@@ -4,18 +4,18 @@ using Nua.Types;
 namespace Nua.CompileService.Syntaxes;
 
 
-public class OrTailExpr : Expr
+public class OrTailSyntax : Syntax
 {
     public Expr RightExpr { get; }
-    public OrTailExpr? NextTailExpr { get; }
+    public OrTailSyntax? NextTailExpr { get; }
 
-    public OrTailExpr(Expr rightExpr, OrTailExpr? nextTailExpr)
+    public OrTailSyntax(Expr rightExpr, OrTailSyntax? nextTailExpr)
     {
         RightExpr = rightExpr;
         NextTailExpr = nextTailExpr;
     }
 
-    public override NuaValue? Evaluate(NuaContext context)
+    public NuaValue? Evaluate(NuaContext context)
     {
         var rightValue = RightExpr.Evaluate(context);
 
@@ -40,8 +40,7 @@ public class OrTailExpr : Expr
 
         return new NuaBoolean(true);
     }
-
-    public override CompiledSyntax Compile()
+    public CompiledSyntax Compile()
     {
         var compiledRight = RightExpr.Compile();
 

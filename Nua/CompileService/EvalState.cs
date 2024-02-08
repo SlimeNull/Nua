@@ -1,4 +1,4 @@
-﻿namespace Nua.CompileService.Syntaxes;
+﻿namespace Nua.CompileService;
 
 public enum EvalState
 {

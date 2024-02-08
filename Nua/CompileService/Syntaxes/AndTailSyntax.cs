@@ -3,18 +3,18 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class AndTailExpr : Expr
+public class AndTailSyntax : Syntax
 {
     public Expr RightExpr { get; }
-    public AndTailExpr? NextTailExpr { get; }
+    public AndTailSyntax? NextTailExpr { get; }
 
-    public AndTailExpr(Expr rightExpr, AndTailExpr? nextTailExpr)
+    public AndTailSyntax(Expr rightExpr, AndTailSyntax? nextTailExpr)
     {
         RightExpr = rightExpr;
         NextTailExpr = nextTailExpr;
     }
 
-    public override NuaValue? Evaluate(NuaContext context)
+    public NuaValue? Evaluate(NuaContext context)
     {
         var rightValue = RightExpr.Evaluate(context);
 
@@ -29,7 +29,7 @@ public class AndTailExpr : Expr
         return rightValue;
     }
 
-    public override CompiledSyntax Compile()
+    public CompiledSyntax Compile()
     {
         var compiledRight = RightExpr.Compile();
 

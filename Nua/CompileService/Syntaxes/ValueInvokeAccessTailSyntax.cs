@@ -3,15 +3,15 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class ValueInvokeAccessTailExpr : ValueAccessTailExpr
+public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
 {
     public IReadOnlyList<Expr> ParameterExpressions { get; }
     public IReadOnlyList<KeyValuePair<string, Expr>> NamedParameterExpressions { get; }
 
-    public ValueInvokeAccessTailExpr(
+    public ValueInvokeAccessTailSyntax(
         IEnumerable<Expr> parameterExpressions,
         IEnumerable<KeyValuePair<string, Expr>> namedParameterExpressions,
-        ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+        ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
     {
         ParameterExpressions = parameterExpressions
             .ToList()
@@ -42,7 +42,6 @@ public class ValueInvokeAccessTailExpr : ValueAccessTailExpr
 
         return result;
     }
-
     public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
     {
         var compiledParameters = ParameterExpressions

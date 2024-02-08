@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes
 {
     public class EqualExpr : Expr
     {
-        public EqualExpr(Expr leftExpr, EqualTailExpr tailExpr)
+        public EqualExpr(Expr leftExpr, EqualTailSyntax tailExpr)
         {
             LeftExpr = leftExpr;
             TailExpr = tailExpr;
         }
 
         public Expr LeftExpr { get; }
-        public EqualTailExpr TailExpr { get; }
+        public EqualTailSyntax TailExpr { get; }
 
         public override NuaValue? Evaluate(NuaContext context)
         {

@@ -6,9 +6,9 @@ namespace Nua.CompileService.Syntaxes;
 public class AssignExpr : Expr
 {
     public Expr LeftExpr { get; }
-    public AssignTailExpr TailExpr { get; }
+    public AssignTailSyntax TailExpr { get; }
 
-    public AssignExpr(Expr leftExpr, AssignTailExpr tailExpr)
+    public AssignExpr(Expr leftExpr, AssignTailSyntax tailExpr)
     {
         LeftExpr = leftExpr;
         TailExpr = tailExpr;

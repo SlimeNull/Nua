@@ -8,9 +8,9 @@ public class IfExpr : ProcessExpr
     public Expr ConditionExpr { get; }
     public MultiExpr? BodyExpr { get; }
     public IReadOnlyList<ElseIfExpr>? ElseIfExpressions { get; }
-    public ElseExpr? ElseExpr { get; }
+    public ElseSyntax? ElseExpr { get; }
 
-    public IfExpr(Expr conditionExpr, MultiExpr? bodyExpr, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseExpr? elseExpr)
+    public IfExpr(Expr conditionExpr, MultiExpr? bodyExpr, IEnumerable<ElseIfExpr>? elseIfExpressions, ElseSyntax? elseExpr)
     {
         ConditionExpr = conditionExpr;
         BodyExpr = bodyExpr;

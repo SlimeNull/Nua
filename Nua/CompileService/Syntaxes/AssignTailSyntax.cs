@@ -3,13 +3,13 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class AssignTailExpr : Expr
+public class AssignTailSyntax : Syntax
 {
     public Expr RightExpr { get; }
     public AssignOperation Operation { get; }
-    public AssignTailExpr? NextTailExpr { get; }
+    public AssignTailSyntax? NextTailExpr { get; }
 
-    public AssignTailExpr(Expr rightExpr, AssignOperation operation, AssignTailExpr? nextTailExpr)
+    public AssignTailSyntax(Expr rightExpr, AssignOperation operation, AssignTailSyntax? nextTailExpr)
     {
         RightExpr = rightExpr;
         Operation = operation;
@@ -89,9 +89,6 @@ public class AssignTailExpr : Expr
             throw new NuaCompileException("Only Value member or Variable can be assigned");
         }
     }
-
-    public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
-    public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
     public override IEnumerable<Syntax> TreeEnumerate()
     {

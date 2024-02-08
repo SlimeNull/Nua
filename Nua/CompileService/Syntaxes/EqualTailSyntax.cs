@@ -3,13 +3,13 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class EqualTailExpr : Expr
+public class EqualTailSyntax : Syntax
 {
     public Expr RightExpr { get; }
     public EqualOperation Operation { get; }
-    public EqualTailExpr? NextTailExpr { get; }
+    public EqualTailSyntax? NextTailExpr { get; }
 
-    public EqualTailExpr(Expr rightExpr, EqualOperation operation, EqualTailExpr? nextTailExpr)
+    public EqualTailSyntax(Expr rightExpr, EqualOperation operation, EqualTailSyntax? nextTailExpr)
     {
         RightExpr = rightExpr;
         Operation = operation;
@@ -32,7 +32,6 @@ public class EqualTailExpr : Expr
 
         return result;
     }
-
     public NuaValue? Evaluate(NuaContext context, Expr leftExpr) => Evaluate(context, leftExpr.Evaluate(context));
 
     public CompiledSyntax Compile(CompiledSyntax compiledLeft)
@@ -52,9 +51,6 @@ public class EqualTailExpr : Expr
         return result;
     }
     public CompiledSyntax Compile(Expr leftExpr) => Compile(leftExpr.Compile());
-
-    public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
-    public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
     public override IEnumerable<Syntax> TreeEnumerate()
     {

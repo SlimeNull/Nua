@@ -7,9 +7,9 @@ namespace Nua.CompileService.Syntaxes;
 public class ValueAccessExpr : PrimaryExpr
 {
     public ValueExpr ValueExpr { get; }
-    public ValueAccessTailExpr TailExpr { get; }
+    public ValueAccessTailSyntax TailExpr { get; }
 
-    public ValueAccessExpr(ValueExpr valueExpr, ValueAccessTailExpr tailExpr)
+    public ValueAccessExpr(ValueExpr valueExpr, ValueAccessTailSyntax tailExpr)
     {
         ValueExpr = valueExpr ?? throw new ArgumentNullException(nameof(valueExpr));
         TailExpr = tailExpr;

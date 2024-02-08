@@ -3,17 +3,15 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class ElseExpr : ProcessExpr
+public class ElseSyntax : Syntax
 {
     public MultiExpr? BodyExpr { get; }
 
-    public ElseExpr(MultiExpr? bodyExpr)
+    public ElseSyntax(MultiExpr? bodyExpr)
     {
         BodyExpr = bodyExpr;
     }
 
-    public override NuaValue? Evaluate(NuaContext context, out EvalState state) => throw new InvalidOperationException();
-    public override CompiledProcessSyntax Compile() => throw new InvalidOperationException();
 
     public override IEnumerable<Syntax> TreeEnumerate()
     {

@@ -3,11 +3,11 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public abstract class ValueAccessTailExpr : Syntax
+public abstract class ValueAccessTailSyntax : Syntax
 {
-    public ValueAccessTailExpr? NextTailExpr { get; }
+    public ValueAccessTailSyntax? NextTailExpr { get; }
 
-    public ValueAccessTailExpr(ValueAccessTailExpr? nextTailExpr)
+    public ValueAccessTailSyntax(ValueAccessTailSyntax? nextTailExpr)
     {
         NextTailExpr = nextTailExpr;
     }
@@ -16,7 +16,6 @@ public abstract class ValueAccessTailExpr : Syntax
     {
         return Evaluate(context, expr.Evaluate(context));
     }
-
     public CompiledSyntax Compile(Expr valueToAccessExpr)
     {
         return Compile(valueToAccessExpr.Compile());
@@ -37,9 +36,9 @@ public abstract class ValueAccessTailExpr : Syntax
         if (valueToAccess is NuaTable table)
         {
             NuaValue? key;
-            if (this is ValueMemberAccessTailExpr memberAccessTail)
+            if (this is ValueMemberAccessTailSyntax memberAccessTail)
                 key = new NuaString(memberAccessTail.Name);
-            else if (this is ValueIndexAccessTailExpr indexAccessTail)
+            else if (this is ValueIndexAccessTailSyntax indexAccessTail)
                 key = indexAccessTail.IndexExpr.Evaluate(context);
             else
                 throw new NuaEvalException("Only Table member, List member or Variable can be assigned");
@@ -50,7 +49,7 @@ public abstract class ValueAccessTailExpr : Syntax
         else if (valueToAccess is NuaList list)
         {
             NuaValue? index;
-            if (this is ValueIndexAccessTailExpr indexAccessTail)
+            if (this is ValueIndexAccessTailSyntax indexAccessTail)
                 index = indexAccessTail.IndexExpr.Evaluate(context);
             else
                 throw new NuaEvalException("Only Table member, List member or Variable can be assigned");

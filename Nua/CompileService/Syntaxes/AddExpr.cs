@@ -7,9 +7,9 @@ namespace Nua.CompileService.Syntaxes;
 public class AddExpr : Expr
 {
     public Expr LeftExpr { get; }
-    public AddTailExpr TailExpr { get; }
+    public AddTailSyntax TailExpr { get; }
 
-    public AddExpr(Expr leftExpr, AddTailExpr tailExpr)
+    public AddExpr(Expr leftExpr, AddTailSyntax tailExpr)
     {
         LeftExpr = leftExpr;
         TailExpr = tailExpr;

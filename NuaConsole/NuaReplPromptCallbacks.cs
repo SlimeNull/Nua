@@ -238,17 +238,17 @@ namespace NuaConsole
                             if (valueAccessExpr.ValueExpr is VariableExpr variableExpr &&
                                 variableExpr.NameToken.HasValue)
                             {
-                                if (valueAccessExpr.TailExpr is ValueInvokeAccessTailExpr)
+                                if (valueAccessExpr.TailExpr is ValueInvokeAccessTailSyntax)
                                 {
                                     _highlightBuffer[new Range(variableExpr.NameToken.Value.StartIndex, variableExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
                                 }
                             }
 
-                            ValueAccessTailExpr lastMemberAccessTail = valueAccessExpr.TailExpr;
-                            while (lastMemberAccessTail.NextTailExpr is ValueMemberAccessTailExpr)
+                            ValueAccessTailSyntax lastMemberAccessTail = valueAccessExpr.TailExpr;
+                            while (lastMemberAccessTail.NextTailExpr is ValueMemberAccessTailSyntax)
                                 lastMemberAccessTail = lastMemberAccessTail.NextTailExpr;
 
-                            if (lastMemberAccessTail is ValueMemberAccessTailExpr memberAccessTailExpr &&
+                            if (lastMemberAccessTail is ValueMemberAccessTailSyntax memberAccessTailExpr &&
                                 lastMemberAccessTail.NextTailExpr is null &&
                                 memberAccessTailExpr.NameToken.HasValue)
                             {
@@ -260,10 +260,10 @@ namespace NuaConsole
                                     _highlightBuffer[new Range(memberAccessTailExpr.NameToken.Value.StartIndex, memberAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(stdModuleNameColor);
                             }
                         }
-                        else if (syntax is ValueMemberAccessTailExpr valueAccessTailExpr &&
+                        else if (syntax is ValueMemberAccessTailSyntax valueAccessTailExpr &&
                             valueAccessTailExpr.NameToken.HasValue)
                         {
-                            if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailExpr)
+                            if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailSyntax)
                             {
                                 _highlightBuffer[new Range(valueAccessTailExpr.NameToken.Value.StartIndex, valueAccessTailExpr.NameToken.Value.EndIndex)] = new ConsoleFormat(functionNameColor);
                             }

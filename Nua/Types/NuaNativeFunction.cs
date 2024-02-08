@@ -1,4 +1,5 @@
-﻿using Nua.CompileService.Syntaxes;
+﻿using Nua.CompileService;
+using Nua.CompileService.Syntaxes;
 
 namespace Nua.Types
 {

@@ -5,14 +5,14 @@ namespace Nua.CompileService.Syntaxes;
 
 public class OrExpr : Expr
 {
-    public OrExpr(Expr leftExpr, OrTailExpr tailExpr)
+    public OrExpr(Expr leftExpr, OrTailSyntax tailExpr)
     {
         LeftExpr = leftExpr;
         TailExpr = tailExpr;
     }
 
     public Expr LeftExpr { get; }
-    public OrTailExpr TailExpr { get; }
+    public OrTailSyntax TailExpr { get; }
 
     public override NuaValue? Evaluate(NuaContext context)
     {

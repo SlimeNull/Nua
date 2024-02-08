@@ -3,13 +3,13 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class MulTailExpr : Expr
+public class MulTailSyntax : Syntax
 {
     public Expr RightExpr { get; }
     public MulOperation Operation { get; }
-    public MulTailExpr? NextTailExpr { get; }
+    public MulTailSyntax? NextTailExpr { get; }
 
-    public MulTailExpr(Expr rightExpr, MulOperation operation, MulTailExpr? nextTailExpr)
+    public MulTailSyntax(Expr rightExpr, MulOperation operation, MulTailSyntax? nextTailExpr)
     {
         RightExpr = rightExpr;
         Operation = operation;
@@ -145,9 +145,6 @@ public class MulTailExpr : Expr
 
         return result;
     }
-
-    public override NuaValue? Evaluate(NuaContext context) => throw new InvalidOperationException();
-    public override CompiledSyntax Compile() => throw new InvalidOperationException();
 
     public override IEnumerable<Syntax> TreeEnumerate()
     {

@@ -151,7 +151,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchAddTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AddTailExpr? expr)
+    public bool MatchAddTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AddTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -186,7 +186,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new AddTailExpr(right, operation, nextTail);
+        expr = new AddTailSyntax(right, operation, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
@@ -211,7 +211,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchMulTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailExpr? expr)
+    public bool MatchMulTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out MulTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -254,7 +254,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new MulTailExpr(right, operation, nextTail);
+        expr = new MulTailSyntax(right, operation, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
@@ -742,7 +742,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchCompareTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailExpr? expr)
+    public bool MatchCompareTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out CompareTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -777,13 +777,13 @@ public class Parser
         }
 
         index = cursor;
-        expr = new CompareTailExpr(right, operation, nextTail);
+        expr = new CompareTailSyntax(right, operation, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
     }
 
-    public bool MatchEqualTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailExpr? expr)
+    public bool MatchEqualTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out EqualTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -818,13 +818,13 @@ public class Parser
         }
 
         index = cursor;
-        expr = new EqualTailExpr(right, operation, nextTail);
+        expr = new EqualTailSyntax(right, operation, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
     }
 
-    public bool MatchOrTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out OrTailExpr? expr)
+    public bool MatchOrTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out OrTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -853,13 +853,13 @@ public class Parser
         }
 
         index = cursor;
-        expr = new OrTailExpr(right, nextTail);
+        expr = new OrTailSyntax(right, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
     }
 
-    public bool MatchAndTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AndTailExpr? expr)
+    public bool MatchAndTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AndTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -888,7 +888,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new AndTailExpr(right, nextTail);
+        expr = new AndTailSyntax(right, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
@@ -960,7 +960,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchElseExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseExpr? expr)
+    public bool MatchElseExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ElseSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -996,7 +996,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ElseExpr(body);
+        expr = new ElseSyntax(body);
         return true;
     }
 
@@ -1060,7 +1060,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchAssignTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailExpr? expr)
+    public bool MatchAssignTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out AssignTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -1099,7 +1099,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new AssignTailExpr(right, operation, nextTail);
+        expr = new AssignTailSyntax(right, operation, nextTail);
         parseStatus.RequireMoreTokens = false;
         parseStatus.Message = null;
         return true;
@@ -1377,7 +1377,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueAccessTailExpr? expr)
+    public bool MatchValueAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueAccessTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -1446,7 +1446,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueIndexAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailExpr? expr)
+    public bool MatchValueIndexAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueIndexAccessTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -1480,7 +1480,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ValueIndexAccessTailExpr(indexExpr, nextTail);
+        expr = new ValueIndexAccessTailSyntax(indexExpr, nextTail);
         return true;
     }
 
@@ -1552,7 +1552,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueInvokeAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailExpr? expr)
+    public bool MatchValueInvokeAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueInvokeAccessTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -1614,7 +1614,7 @@ public class Parser
         }
 
         index = cursor;
-        expr = new ValueInvokeAccessTailExpr(positionParams, namedParams, nextTail);
+        expr = new ValueInvokeAccessTailSyntax(positionParams, namedParams, nextTail);
         parseStatus.Message = null;
         return true;
     }
@@ -1640,7 +1640,7 @@ public class Parser
         return true;
     }
 
-    public bool MatchValueMemberAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailExpr? expr)
+    public bool MatchValueMemberAccessTailExpr(bool required, ref int index, out ParseStatus parseStatus, [NotNullWhen(true)] out ValueMemberAccessTailSyntax? expr)
     {
         parseStatus = new();
         expr = null;
@@ -1665,7 +1665,7 @@ public class Parser
             return false;
         }
 
-        expr = new ValueMemberAccessTailExpr(idToken, nextTail);
+        expr = new ValueMemberAccessTailSyntax(idToken, nextTail);
         index = cursor;
         parseStatus.Message = null;
         return true;

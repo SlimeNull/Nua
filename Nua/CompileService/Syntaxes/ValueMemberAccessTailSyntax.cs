@@ -5,17 +5,17 @@ using Nua.Types;
 
 namespace Nua.CompileService.Syntaxes;
 
-public class ValueMemberAccessTailExpr : ValueAccessTailExpr
+public class ValueMemberAccessTailSyntax : ValueAccessTailSyntax
 {
     public string Name { get; }
     public Token? NameToken { get; }
 
-    public ValueMemberAccessTailExpr(string name, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+    public ValueMemberAccessTailSyntax(string name, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
     {
         Name = name;
     }
 
-    public ValueMemberAccessTailExpr(Token nameToken, ValueAccessTailExpr? nextTailExpr) : base(nextTailExpr)
+    public ValueMemberAccessTailSyntax(Token nameToken, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
     {
         if (nameToken.Value is null)
             throw new ArgumentException("Value of name token is null", nameof(nameToken));
@@ -39,7 +39,6 @@ public class ValueMemberAccessTailExpr : ValueAccessTailExpr
 
         return value;
     }
-
     public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
     {
         CompiledSyntax result = CompiledSyntax.CreateFromDelegate(context =>
