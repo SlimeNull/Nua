@@ -17,20 +17,6 @@ namespace Nua.Stdlib
             {
                 Storage =
                 {
-                    [new NuaString("add")] = new NuaDelegateFunction(
-                        (context, parameters) =>
-                        {
-                            const string functionName = "add";
-
-                            var table = OperationsHelper.TakeTableParam(functionName, parameters, 0);
-                            var key = OperationsHelper.TakeAnyParam(functionName, parameters, 1);
-                            var value = OperationsHelper.TakeAnyParam(functionName, parameters, 2);
-
-                            if (table is NuaNativeTable nativeTable)
-                                nativeTable.Storage.Add(key, value);
-                            
-                            return table;
-                        }, "key", "value"),
                     [new NuaString("contains_key")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -44,21 +30,21 @@ namespace Nua.Stdlib
                                 isContains = nativeTable.Storage.ContainsKey(key);
 
                             return new NuaBoolean(isContains);
-                        }, "key"),
-                    [new NuaString("remove")] = new NuaDelegateFunction(
+                        }, "table", "key"),
+                    [new NuaString("contains_value")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
-                            const string functionName = "remove";
+                            const string functionName = "contains_value";
 
                             var table = OperationsHelper.TakeTableParam(functionName, parameters, 0);
-                            var key = OperationsHelper.TakeAnyParam(functionName, parameters, 1);
+                            var value = OperationsHelper.TakeAnyParam(functionName, parameters, 1);
 
-                            bool isRemove = false;
+                            bool isContainsValue = false;
                             if (table is NuaNativeTable nativeTable)
-                                isRemove = nativeTable.Storage.Remove(key);
+                                isContainsValue = nativeTable.Storage.ContainsValue(value);
 
-                            return new NuaBoolean(isRemove);
-                        }, "key"),
+                            return new NuaBoolean(isContainsValue);
+                        }, "table", "value"),
                     [new NuaString("clear")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -71,20 +57,40 @@ namespace Nua.Stdlib
 
                             return table;
                         }),
-                    [new NuaString("contains_value")] = new NuaDelegateFunction(
+                    [new NuaString("raw_get")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
-                            const string functionName = "contains_value";
+                            const string functionName = "raw_get";
 
                             var table = OperationsHelper.TakeTableParam(functionName, parameters, 0);
                             var key = OperationsHelper.TakeAnyParam(functionName, parameters, 1);
 
-                            bool isContainsValue = false;
-                            if (table is NuaNativeTable nativeTable)
-                                isContainsValue = nativeTable.Storage.ContainsValue(key);
+                            if (table is NuaNativeTable nativeTable &&
+                                nativeTable.Storage.TryGetValue(key, out var value))
+                                return value;
+                            
+                            return null;
+                        }, "table", "key"),
+                    [new NuaString("raw_set")] = new NuaDelegateFunction(
+                        (context, parameters) =>
+                        {
+                            const string functionName = "raw_set";
 
-                            return new NuaBoolean(isContainsValue);
-                        }, "key"),
+                            var table = OperationsHelper.TakeTableParam(functionName, parameters, 0);
+                            var key = OperationsHelper.TakeAnyParam(functionName, parameters, 1);
+                            OperationsHelper.EnsureParamIndex(functionName, parameters, "any", 2);
+                            var value = parameters[2];
+
+                            if (table is NuaNativeTable nativeTable)
+                            {
+                                if (value is not null)
+                                    nativeTable.Storage[key] = value;
+                                else
+                                    nativeTable.Storage.Remove(key);
+                            }
+
+                            return null;
+                        }, "table", "key", "value"),
                 }
             };
         }
