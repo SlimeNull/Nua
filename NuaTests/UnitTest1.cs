@@ -12,6 +12,7 @@ namespace NuaTests
         public void TestAdd1()
         {
             Assert.AreEqual(_globalRuntime.Evaluate("114000+514"), new NuaNumber(114514));
+            Assert.AreEqual(_globalRuntime.Evaluate("114514-514"), new NuaNumber(114000));
         }
     }
 }

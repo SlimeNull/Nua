@@ -237,38 +237,38 @@ namespace NuaConsole
                     {
                         if (syntax is ValueAccessExpr valueAccessExpr)
                         {
-                            if (valueAccessExpr.ValueExpr is VariableExpr variableExpr &&
+                            if (valueAccessExpr.Value is VariableExpr variableExpr &&
                                 variableExpr.NameToken.HasValue)
                             {
-                                if (valueAccessExpr.TailExpr is ValueInvokeAccessTailSyntax)
+                                if (valueAccessExpr.Tails is ValueInvokeAccessTailSyntax)
                                 {
                                     _highlightBuffer[variableExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
                                 }
                             }
 
-                            ValueAccessTailSyntax lastMemberAccessTail = valueAccessExpr.TailExpr;
-                            while (lastMemberAccessTail.NextTailExpr is ValueMemberAccessTailSyntax)
-                                lastMemberAccessTail = lastMemberAccessTail.NextTailExpr;
+                            //ValueAccessTailSyntax lastMemberAccessTail = valueAccessExpr.Tails;
+                            //while (lastMemberAccessTail.NextTailExpr is ValueMemberAccessTailSyntax)
+                            //    lastMemberAccessTail = lastMemberAccessTail.NextTailExpr;
 
-                            if (lastMemberAccessTail is ValueMemberAccessTailSyntax memberAccessTailExpr &&
-                                lastMemberAccessTail.NextTailExpr is null &&
-                                memberAccessTailExpr.NameToken.HasValue)
-                            {
-                                var value = valueAccessExpr.Evaluate(_scriptContext);
+                            //if (lastMemberAccessTail is ValueMemberAccessTailSyntax memberAccessTailExpr &&
+                            //    lastMemberAccessTail.NextTailExpr is null &&
+                            //    memberAccessTailExpr.NameToken.HasValue)
+                            //{
+                            //    var value = valueAccessExpr.Evaluate(_scriptContext);
 
-                                if (value is NuaFunction)
-                                    _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
-                                else if (value is StandardModuleTable)
-                                    _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(stdModuleNameColor);
-                            }
+                            //    if (value is NuaFunction)
+                            //        _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
+                            //    else if (value is StandardModuleTable)
+                            //        _highlightBuffer[memberAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(stdModuleNameColor);
+                            //}
                         }
                         else if (syntax is ValueMemberAccessTailSyntax valueAccessTailExpr &&
                             valueAccessTailExpr.NameToken.HasValue)
                         {
-                            if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailSyntax)
-                            {
-                                _highlightBuffer[valueAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
-                            }
+                            //if (valueAccessTailExpr.NextTailExpr is ValueInvokeAccessTailSyntax)
+                            //{
+                            //    _highlightBuffer[valueAccessTailExpr.NameToken.Value.TextRange] = new ConsoleFormat(functionNameColor);
+                            //}
                         }
                         else if (syntax is VariableExpr variableExpr)
                         {

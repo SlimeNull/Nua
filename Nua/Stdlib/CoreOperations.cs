@@ -23,7 +23,7 @@ namespace Nua.Stdlib
                             var value = OperationsHelper.TakeAnyParam(functionName, parameters, 0);
 
                             return new NuaString(value.ToString() ?? string.Empty);
-                        }),
+                        }, "value"),
                     [new NuaString("to_number")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -41,7 +41,7 @@ namespace Nua.Stdlib
                                 return null;
 
                             return new NuaNumber(number);
-                        }),
+                        }, "value"),
                     [new NuaString("get_type")] = new NuaDelegateFunction(
                         (context, parameters) =>
                         {
@@ -54,7 +54,7 @@ namespace Nua.Stdlib
                                 return new NuaString("null");
                             else
                                 return new NuaString(value.TypeName);
-                        }),
+                        }, "value"),
                 }
             };
         }

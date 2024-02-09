@@ -7,7 +7,7 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
 {
     public Expr IndexExpr { get; }
 
-    public ValueIndexAccessTailSyntax(Expr indexExpr, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
+    public ValueIndexAccessTailSyntax(Expr indexExpr)
     {
         IndexExpr = indexExpr;
     }
@@ -25,7 +25,7 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
             if (index == null)
                 throw new NuaEvalException("Index is null");
 
-            result = table.Get(index);
+            result = table.Get(context, index);
         }
         else if (valueToAccess is NuaList list)
         {
@@ -80,9 +80,6 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
             throw new NuaEvalException("Only Dictionary, List and String can be indexed");
         }
 
-        if (NextTailExpr != null)
-            result = NextTailExpr.Evaluate(context, result);
-
         return result;
     }
     public override CompiledSyntax Compile(CompiledSyntax compiledValueToAccess)
@@ -99,7 +96,7 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
                 if (index == null)
                     throw new NuaEvalException("Index is null");
 
-                return table.Get(index);
+                return table.Get(context, index);
             }
             else if (valueToAccess is NuaList list)
             {
@@ -145,9 +142,6 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
             }
         });
 
-        if (NextTailExpr is not null)
-            result = NextTailExpr.Compile(result);
-
         return result;
     }
 
@@ -157,9 +151,5 @@ public class ValueIndexAccessTailSyntax : ValueAccessTailSyntax
             yield return syntax;
         foreach (var syntax in IndexExpr.TreeEnumerate())
             yield return syntax;
-
-        if (NextTailExpr is not null)
-            foreach (var syntax in NextTailExpr.TreeEnumerate())
-                yield return syntax;
     }
 }

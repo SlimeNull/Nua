@@ -116,13 +116,13 @@ namespace Nua
                 if (namedParametersDict.TryGetValue("sep", out NuaValue? nuaSep))
                     sep = nuaSep?.ToString() ?? string.Empty;
                 else
-                    sep = "\r";
+                    sep = "\t";
 
                 string? end;
                 if (namedParametersDict.TryGetValue("end", out NuaValue? nuaEnd))
                     end = nuaEnd?.ToString();
                 else
-                    end = "\n";
+                    end = Environment.NewLine;
 
 
                 Console.Write(string.Join<NuaValue?>(sep, parameters));

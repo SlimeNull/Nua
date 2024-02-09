@@ -1198,13 +1198,14 @@ public class Parser
         if (!MatchValueExpr(required, ref cursor, out parseStatus, out var variable))
             return false;
 
-        if (!MatchValueAccessTailExpr(false, ref cursor, out var tailParseStatus, out var tail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
+        List<ValueAccessTailSyntax> tails = new();
+        while (MatchValueAccessTailExpr(false, ref cursor, out parseStatus, out var tail))
+            tails.Add(tail);
 
-        expr = tail != null ? new ValueAccessExpr((ValueExpr)variable, tail) : (ValueExpr)variable;
+        if (parseStatus.Intercept)
+            return false;
+
+        expr = tails.Count != 0 ? new ValueAccessExpr((ValueExpr)variable, tails) : (ValueExpr)variable;
         index = cursor;
         return true;
     }
@@ -1298,14 +1299,8 @@ public class Parser
             return false;
         }
 
-        if (!MatchValueAccessTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
         index = cursor;
-        syntax = new ValueIndexAccessTailSyntax(indexExpr, nextTail);
+        syntax = new ValueIndexAccessTailSyntax(indexExpr);
         return true;
     }
 
@@ -1430,14 +1425,8 @@ public class Parser
             return false;
         }
 
-        if (!MatchValueAccessTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
         index = cursor;
-        syntax = new ValueInvokeAccessTailSyntax(positionParams, namedParams, nextTail);
+        syntax = new ValueInvokeAccessTailSyntax(positionParams, namedParams);
         parseStatus.Message = null;
         return true;
     }
@@ -1481,13 +1470,7 @@ public class Parser
             return false;
         }
 
-        if (!MatchValueAccessTailExpr(false, ref cursor, out var tailParseStatus, out var nextTail) && tailParseStatus.Intercept)
-        {
-            parseStatus = tailParseStatus;
-            return false;
-        }
-
-        syntax = new ValueMemberAccessTailSyntax(idToken, nextTail);
+        syntax = new ValueMemberAccessTailSyntax(idToken);
         index = cursor;
         parseStatus.Message = null;
         return true;

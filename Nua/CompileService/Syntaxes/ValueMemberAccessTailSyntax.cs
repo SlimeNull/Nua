@@ -10,12 +10,12 @@ public class ValueMemberAccessTailSyntax : ValueAccessTailSyntax
     public string Name { get; }
     public Token? NameToken { get; }
 
-    public ValueMemberAccessTailSyntax(string name, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
+    public ValueMemberAccessTailSyntax(string name)
     {
         Name = name;
     }
 
-    public ValueMemberAccessTailSyntax(Token nameToken, ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
+    public ValueMemberAccessTailSyntax(Token nameToken)
     {
         if (nameToken.Value is null)
             throw new ArgumentException("Value of name token is null", nameof(nameToken));
@@ -32,10 +32,7 @@ public class ValueMemberAccessTailSyntax : ValueAccessTailSyntax
             throw new NuaEvalException("Unable to access member of non-table value");
 
         var key = new NuaString(Name);
-        var value = table.Get(key);
-
-        if (NextTailExpr != null)
-            value = NextTailExpr.Evaluate(context, value);
+        var value = table.Get(context, key);
 
         return value;
     }
@@ -51,13 +48,10 @@ public class ValueMemberAccessTailSyntax : ValueAccessTailSyntax
                 throw new NuaEvalException("Unable to access member of non-table value");
 
             var key = new NuaString(Name);
-            var value = table.Get(key);
+            var value = table.Get(context, key);
 
             return value;
         });
-
-        if (NextTailExpr is not null)
-            result = NextTailExpr.Compile(result);
 
         return result;
     }
@@ -66,9 +60,5 @@ public class ValueMemberAccessTailSyntax : ValueAccessTailSyntax
     {
         foreach (var syntax in base.TreeEnumerate())
             yield return syntax;
-
-        if (NextTailExpr is not null)
-            foreach (var syntax in NextTailExpr.TreeEnumerate())
-                yield return syntax;
     }
 }

@@ -20,7 +20,7 @@ public class TableExpr : ValueExpr
 
         foreach (var member in MemberExpressions)
         {
-            table.Set(member.KeyExpr.Evaluate(context)!, member.ValueExpr.Evaluate(context));
+            table.Set(context, member.KeyExpr.Evaluate(context)!, member.ValueExpr.Evaluate(context));
         }
 
         return table;
@@ -42,7 +42,7 @@ public class TableExpr : ValueExpr
 
                 foreach (var member in compiledMembers)
                 {
-                    table.Set(member.Key.Evaluate(context)!, member.Value.Evaluate(context));
+                    table.Set(context, member.Key.Evaluate(context)!, member.Value.Evaluate(context));
                 }
 
                 bufferedValue = table;

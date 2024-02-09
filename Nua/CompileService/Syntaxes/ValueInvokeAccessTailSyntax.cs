@@ -10,8 +10,7 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
 
     public ValueInvokeAccessTailSyntax(
         IEnumerable<Expr> parameterExpressions,
-        IEnumerable<KeyValuePair<string, Expr>> namedParameterExpressions,
-        ValueAccessTailSyntax? nextTailExpr) : base(nextTailExpr)
+        IEnumerable<KeyValuePair<string, Expr>> namedParameterExpressions)
     {
         ParameterExpressions = parameterExpressions
             .ToList()
@@ -25,8 +24,15 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
     {
         if (valueToAccess == null)
             throw new NuaEvalException("Unable to invoke a null value");
-        if (valueToAccess is not NuaFunction function)
-            throw new NuaEvalException("Unable to invoke a non-function value");
+
+        NuaFunction invocationFunction;
+        if (valueToAccess is NuaFunction function)
+            invocationFunction = function;
+        else if (valueToAccess is NuaTable table &&
+            table.GetInvocationFunction(context) is NuaFunction tableInvocationFunction)
+            invocationFunction = tableInvocationFunction;
+        else
+            throw new NuaEvalException("Unable to invoke a non-invocable value");
 
         var parameters = ParameterExpressions
             .Select(p => p.Evaluate(context))
@@ -35,10 +41,7 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
             .Select(p => new KeyValuePair<string, NuaValue?>(p.Key, p.Value.Evaluate(context)))
             .ToArray();
 
-        var result = function.Invoke(context, parameters, namedParameters);
-
-        if (NextTailExpr != null)
-            result = NextTailExpr.Evaluate(context, result);
+        var result = invocationFunction.Invoke(context, parameters, namedParameters);
 
         return result;
     }
@@ -55,10 +58,14 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
         {
             var valueToAccess = compiledValueToAccess.Evaluate(context);
 
-            if (valueToAccess == null)
-                throw new NuaEvalException("Unable to invoke a null value");
-            if (valueToAccess is not NuaFunction function)
-                throw new NuaEvalException("Unable to invoke a non-function value");
+            NuaFunction invocationFunction;
+            if (valueToAccess is NuaFunction function)
+                invocationFunction = function;
+            else if (valueToAccess is NuaTable table &&
+                table.GetInvocationFunction(context) is NuaFunction tableInvocationFunction)
+                invocationFunction = tableInvocationFunction;
+            else
+                throw new NuaEvalException("Unable to invoke a non-invocable value");
 
             var parameters = compiledParameters
                 .Select(compiled => compiled.Evaluate(context))
@@ -67,13 +74,10 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
                 .Select(compiled => new KeyValuePair<string, NuaValue?>(compiled.Key, compiled.Value.Evaluate(context)))
                 .ToArray();
 
-            var result = function.Invoke(context, parameters, namedParameters);
+            var result = invocationFunction.Invoke(context, parameters, namedParameters);
 
             return result;
         });
-
-        if (NextTailExpr is not null)
-            result = NextTailExpr.Compile(result);
 
         return result;
     }
@@ -85,10 +89,6 @@ public class ValueInvokeAccessTailSyntax : ValueAccessTailSyntax
 
         foreach (var parameterExpr in ParameterExpressions)
             foreach (var syntax in parameterExpr.TreeEnumerate())
-                yield return syntax;
-
-        if (NextTailExpr is not null)
-            foreach (var syntax in NextTailExpr.TreeEnumerate())
                 yield return syntax;
     }
 }
